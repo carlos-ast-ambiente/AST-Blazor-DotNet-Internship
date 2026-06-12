@@ -1,28 +1,43 @@
 ﻿@inherits LayoutComponentBase
 
-<MudThemeProvider />
+<MudThemeProvider Theme="@_theme"/>
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<MudLayout>
+    <MudAppBar Fixed="true" Color="Color.Primary" Elevation="2">
+        <MudIconButton Icon="@Icons.Material.Filled.Dehaze" OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h4">BlazorApp</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Settings" />
+    </MudAppBar>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+    <NavMenu SideBarOpen="@_drawerOpen" />
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+    <MudMainContent MaxWidth="MaxWidth.Large" Class="pa-4">
+        @Body
+    </MudMainContent>
+</MudLayout>
 
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
-</div>
+@code
+{
+    private MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#596746",
+            Secondary = "#809568",
+            Background = "#616161",
+            TextPrimary = "#A3AE97",
+            TextSecondary = "#909B84"
+        }
+
+    };
+
+    private bool _drawerOpen = true;
+
+    void ToggleDrawer() {
+        _drawerOpen = !_drawerOpen;
+    }
+}
