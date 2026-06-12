@@ -1,0 +1,37 @@
+@page "/mudtest"
+@inject ISnackbar Snackbar
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary">
+    Test Button
+</MudButton>
+
+<br /> <br />
+
+<MudTextField T="string" Label="Name" />
+
+<br /> <br />
+
+<MudSelect T="string" Label="Genre"> 
+    <MudSelectItem T="string" Value='"Female"'>Female</MudSelectItem>
+    <MudSelectItem T="string" Value='"Male"'>Male</MudSelectItem>
+</MudSelect>
+
+<br /> <br />
+
+<MudCard Style="width:300px">
+    <MudCardMedia Image="https://picsum.photos/200/300" Height="200"/>
+    <MudCardContent>
+        <MudText Typo="Typo.h5">Image</MudText>
+        <MudText Typo=Typo.body2>Random image</MudText>
+    </MudCardContent>
+</MudCard>
+
+<br /> <br />
+
+<MudAlert Severity="Severity.Warning">Danger in zone 2</MudAlert>
+
+<br /> <br />
+
+<MudButton Variant="Variant.Filled" Color="Color.Secondary" @onclick="@(() => Snackbar.Add("Simple Snackbar"))">
+    Snackbar
+</MudButton>

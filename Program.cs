@@ -1,11 +1,13 @@
 using BlazorApp.Components;
 using BlazorApp.Data;
 using Microsoft.EntityFrameworkCore;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddRazorComponents()
+builder.Services.AddMudServices()
+    .AddRazorComponents()
     .AddInteractiveServerComponents();
 
 
