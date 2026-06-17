@@ -1,1 +1,49 @@
-﻿@page "/"
+@page "/"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+    <MudPaper Elevation="6" Class="pa-8">
+        <MudText Typo="Typo.h3" Align="Align.Center" GutterBottom="true">Dashboard</MudText>
+        <MudText Typo="Typo.body1" Align="Align.Center">
+            Welcome to the BlazorApp management system.
+        </MudText>
+        
+        <MudGrid Class="mt-8">
+            <AuthorizeView Roles="Admin">
+                <MudItem xs="12" sm="6" md="4">
+                    <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
+                        <MudText Typo="Typo.h6">Users</MudText>
+                        <MudText Typo="Typo.body2">Administer user accounts and roles.</MudText>
+                        <MudButton Href="/users" Variant="Variant.Text" Color="Color.Primary" Class="mt-2">Go to Users</MudButton>
+                    </MudPaper>
+                </MudItem>
+            </AuthorizeView>
+
+            <AuthorizeView Roles="Admin,Technician">
+                <MudItem xs="12" sm="6" md="4">
+                    <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
+                        <MudText Typo="Typo.h6">Plants</MudText>
+                        <MudText Typo="Typo.body2">Manage and monitor your plants.</MudText>
+                        <MudButton Href="/plants" Variant="Variant.Text" Color="Color.Primary" Class="mt-2">Go to Plants</MudButton>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="4">
+                    <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
+                        <MudText Typo="Typo.h6">Groups</MudText>
+                        <MudText Typo="Typo.body2">Organize your plants into groups.</MudText>
+                        <MudButton Href="/groups" Variant="Variant.Text" Color="Color.Primary" Class="mt-2">Go to Groups</MudButton>
+                    </MudPaper>
+                </MudItem>
+            </AuthorizeView>
+
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
+                    <MudText Typo="Typo.h6">Profile</MudText>
+                    <MudText Typo="Typo.body2">Manage your personal account settings.</MudText>
+                    <MudButton Href="/profile" Variant="Variant.Text" Color="Color.Primary" Class="mt-2">View Profile</MudButton>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>

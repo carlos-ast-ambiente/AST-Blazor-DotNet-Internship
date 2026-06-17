@@ -57,6 +57,8 @@ if (!app.Environment.IsDevelopment())
 using (var scope = app.Services.CreateScope()) {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
 
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+
     var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
     var roles = configuration.GetSection("Roles").Get<string[]>();
@@ -66,6 +68,25 @@ using (var scope = app.Services.CreateScope()) {
             if (!await roleManager.RoleExistsAsync(role)) {
                 await roleManager.CreateAsync(new IdentityRole<int>(role));
             }
+        }
+    }
+
+    var adminUsername = "admin";
+    if(await userManager.FindByNameAsync(adminUsername) == null) {
+        var admin = new User {
+            UserName = adminUsername,
+            Email = "admin@admin.com",
+            Name = "Administrator",
+            Enabled = true,
+            DateCreated = DateTime.UtcNow,
+            DateUpdated = DateTime.UtcNow
+        };
+
+        var result = await userManager.CreateAsync(admin, "1234aZ.");
+        if (result.Succeeded) {
+            await userManager.AddToRoleAsync(admin, "Admin");
+        } else {
+            Console.WriteLine($"Failed to create admin: {string.Join(", ", result.Errors.Select(e => e.Description))}");
         }
     }
 }

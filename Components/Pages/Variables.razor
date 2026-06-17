@@ -1,6 +1,6 @@
 @page "/variables"
 @using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
+@attribute [Authorize(Roles = "Admin,Technician")]
 
 <MudMainContent>
     <MudText Typo="Typo.h5">Variables</MudText>

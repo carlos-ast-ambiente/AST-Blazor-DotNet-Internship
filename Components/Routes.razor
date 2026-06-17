@@ -1,16 +1,23 @@
-﻿<CascadingAuthenticationState>
+<CascadingAuthenticationState>
     <Router AppAssembly="typeof(Program).Assembly">
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
                 <NotAuthorized>
                     <MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
-                        <MudText Typo="Typo.h6">You are not authorised to view this page.</MudText>
-                        <MudButton href="/register" Variant="Variant.Filled" Color="Color.Primary">
-                            Register
-                        </MudButton>
-                        <MudButton href="/login" Variant="Variant.Filled" Color="Color.Primary">
-                            Login
-                        </MudButton>
+                        <MudPaper Elevation="6" Class="pa-8">
+                            <MudText Typo="Typo.h5" GutterBottom="true">Access Denied</MudText>
+                            <MudText Typo="Typo.body1" Class="mb-6">
+                                You are not authorised to view this page. Please log in or create an account to continue.
+                            </MudText>
+                            <div class="d-flex gap-4">
+                                <MudButton href="/login" Variant="Variant.Filled" Color="Color.Primary">
+                                    Login
+                                </MudButton>
+                                <MudButton href="/register" Variant="Variant.Outlined" Color="Color.Primary">
+                                    Register
+                                </MudButton>
+                            </div>
+                        </MudPaper>
                     </MudContainer>
                 </NotAuthorized>
             </AuthorizeRouteView>
@@ -18,7 +25,13 @@
         </Found>
         <NotFound>
             <LayoutView Layout="typeof(Layout.MainLayout)">
-                <p>Sorry there is nothing at this address.</p>
+                <MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+                    <MudPaper Elevation="6" Class="pa-8">
+                        <MudText Typo="Typo.h5">Page Not Found</MudText>
+                        <MudText Typo="Typo.body1" Class="mt-4">Sorry, there is nothing at this address.</MudText>
+                        <MudButton href="/" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">Go Home</MudButton>
+                    </MudPaper>
+                </MudContainer>
             </LayoutView>
         </NotFound>
     </Router>
