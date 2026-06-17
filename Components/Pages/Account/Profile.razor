@@ -1,0 +1,57 @@
+@page "/profile"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using BlazorApp.Models
+@attribute [Authorize]
+@inject UserManager<User> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-16">
+    <MudPaper Elevation="6" Class="pa-8">
+        <MudText Typo="Typo.h4" GutterButton="true">
+            User Profile
+        </MudText>
+
+        @if (_user != null) {
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudText Typo="Typo.subtitle1"><b>Name: </b>@_user.Name</MudText>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudText Typo="Typo.subtitle1"><b>Username: </b>@_user.UserName</MudText>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudText Typo="Typo.subtitle1"><b>Email: </b>@_user.Email</MudText>
+                </MudItem>
+            </MudGrid>
+
+            <MudDivider Class="my-6" />
+
+            <div class="d-flex justify-center">
+                <form action="/account/logout" method="post">
+                    <AntiforgeryToken />
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.Logout">
+                        Logout
+                    </MudButton>
+                </form>
+            </div>
+        }
+        else {
+            <MudProgressCircle Color="Color.Primary" Intermidiate="true" />
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private User? _user;
+
+    protected override async Task OnInitializedAsync() {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userClaims = authState.User;
+
+        if(userClaims.Identity?.IsAuthenticated == true) {
+            _user = await UserManager.GetUserAsync(userClaims);
+        }
+    }
+}

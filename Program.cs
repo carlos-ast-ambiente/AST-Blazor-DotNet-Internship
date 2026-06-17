@@ -15,7 +15,12 @@ builder.Services.AddMudServices()
 
 //identity and security services
 builder.Services.AddIdentityCore<User>(options => {
-    //password rules (optional)
+        //password rules (optional)
+        // options.Password.RequireDigit = false;
+        // options.Password.RequiredLength = 3;
+        // options.Password.RequireNonAlphanumeric = false;
+        // options.Password.RequireUppercase = false;
+        // options.Password.RequireLowercase = false;
     })
     .AddRoles<IdentityRole<int>>() //enables rolebased authorisation
     .AddEntityFrameworkStores<ApplicationDbContext>() //save data via db context
@@ -26,9 +31,13 @@ builder.Services.AddCascadingAuthenticationState(); //cascading state tracking
 
 builder.Services.AddAuthentication(options => {
         options.DefaultScheme = IdentityConstants.ApplicationScheme;
-        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+        options.DefaultSignInScheme = IdentityConstants.ApplicationScheme;
+        options.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme;
+        options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
     })
     .AddIdentityCookies();
+
+builder.Services.AddAuthorization();
 
 var connectionString = builder.Configuration.GetConnectionString("PostgreSQLLocalHost");
 
@@ -64,12 +73,42 @@ using (var scope = app.Services.CreateScope()) {
 app.UseStatusCodePagesWithReExecute("/not-found");
 app.UseHttpsRedirection();
 
-app.UseAntiforgery();
-
 app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseAntiforgery();
+
+app.MapPost("/account/login", async (
+    HttpContext httpContext,
+    SignInManager<User> signInManager) =>
+{
+    var form = await httpContext.Request.ReadFormAsync();
+    var username = form["username"].ToString();
+    var password = form["password"].ToString();
+
+    Console.WriteLine($"Login attempt for: '{username}'"); 
+
+    var result = await signInManager.PasswordSignInAsync(
+        username,
+        password,
+        isPersistent: false,
+        lockoutOnFailure: false);
+
+    if (result.Succeeded) {
+        return Results.Redirect("/");
+    }
+
+    return Results.Redirect("/login?error=1");
+});
+
+
+app.MapPost("/account/logout", async(SignInManager<User> signInManager) => 
+{
+    await signInManager.SignOutAsync();
+    return Results.Redirect("/");
+});
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

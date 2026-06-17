@@ -1,0 +1,75 @@
+@page "/register"
+@using BlazorApp.Models
+@using Microsoft.AspNetCore.Identity
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authorization
+@attribute [AllowAnonymous]
+@inject UserManager<User> UserManager
+@inject NavigationManager NavigationManager
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-16">
+    <MudPaper Elevation="6" Class="pa-8">
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true" Class="mt-8">
+            Create Account
+        </MudText>
+
+        @if (!string.IsNullOrEmpty(_errorMessage)) {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
+        }
+
+        <EditForm Model="@_model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+
+            <MudTextField Label="Name" @bind-Value="_model.Name" For="@(() => _model.Name)" Variant="Variant.Outlined" Class="mb-4" />
+
+            <MudTextField Label="Username" @bind-Value="_model.Username" For="@(() => _model.Username)" Variant="Variant.Outlined" Class="mb-4" />
+
+            <MudTextField Label="Email" @bind-Value="_model.Email" For="@(() => _model.Email)" Variant="Variant.Outlined" Class="mb-4" />
+
+            <MudTextField Label="Password" @bind-Value="_model.Password" For="@(() => _model.Password)" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4" />
+
+            <MudTextField Label="Confirm Password" @bind-Value="_model.ConfirmPassword" For="@(() => _model.ConfirmPassword)" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4" />
+
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Register</MudButton>
+        </EditForm>
+        <MudText Align="Align.Center" Class="mt-4">
+            Already have an account? <MudLink href="/login">Login</MudLink>
+        </MudText>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private RegisterModel _model = new();
+    private string? _errorMessage;
+
+    private async Task OnValidSubmit() {
+        _errorMessage = null;
+
+        var user = new User {
+            UserName = _model.Username,
+            Email = _model.Email,
+            Name = _model.Name,
+            DateCreated = DateTime.UtcNow,
+            DateUpdated = DateTime.UtcNow,
+            Enabled = true
+        };
+
+        var result = await UserManager.CreateAsync(user, _model.Password);
+
+        if (result.Succeeded) {
+            await UserManager.AddToRoleAsync(user, "Client"); //default client
+            NavigationManager.NavigateTo("/login");
+        }
+        else {
+            _errorMessage = string.Join(", ", result.Errors.Select(e => e.Description));
+        }
+    }
+
+    public class RegisterModel {
+        [Required] public string Name { get; set; } = "";
+        [Required] public string Username { get; set; } = "";
+        [Required, EmailAddress] public string Email { get; set; } = "";
+        [Required, MinLength(6)] public string Password { get; set; } = "";
+        [Compare(nameof(Password))] public string ConfirmPassword { get; set; } = "";
+    }
+}

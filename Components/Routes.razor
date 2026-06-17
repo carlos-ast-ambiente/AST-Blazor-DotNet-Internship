@@ -3,7 +3,15 @@
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
                 <NotAuthorized>
-                    <p>You are not authorised to view this page.</p>
+                    <MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+                        <MudText Typo="Typo.h6">You are not authorised to view this page.</MudText>
+                        <MudButton href="/register" Variant="Variant.Filled" Color="Color.Primary">
+                            Register
+                        </MudButton>
+                        <MudButton href="/login" Variant="Variant.Filled" Color="Color.Primary">
+                            Login
+                        </MudButton>
+                    </MudContainer>
                 </NotAuthorized>
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="routeData" Selector="h1" />
