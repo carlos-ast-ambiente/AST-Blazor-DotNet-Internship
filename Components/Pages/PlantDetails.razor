@@ -1,20 +1,28 @@
 @page "/plant/{Name}"
+@using Microsoft.AspNetCore.Authorization
 @using BlazorApp.Models
 @using BlazorApp.Services
+@attribute [Authorize(Roles = "Admin,Technician")]
 @inject PlantService PlantService
+@inject NavigationManager NavigationManager
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
     @if (plant == null) {
         <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
     } else {
-        <MudPaper Elevation="4" Class="pa-8">
+        <MudPaper Elevation="4" Class="pa-8" Style="position: relative">
             <MudText Typo="Typo.h5" Class="mb-8">@plant.Name</MudText>
             <MudText Typo="Typo.body1" Class="mb-4">@plant.Database</MudText>
             <MudText Typo="Typo.body1" Class="mb-4">@plant.DateCreated</MudText>
             <MudText Typo="Typo.body1" Class="mb-4">@plant.DateUpdated</MudText>
-            <MudChip T="string" Class="mb-4" Color="@(plant.Enabled ? Color.Success : Color.Error)" Size="Size.Small">
+            <MudChip T="string" Class="mb-4" Color="@(plant.Enabled ? Color.Success : Color.Error)" Size="Size.Medium" Style="position: absolute; top: 32px; right:32px">
                 @(plant.Enabled ? "Enabled" : "Disabled")
             </MudChip>
+            <AuthorizeView Roles="Admin">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick = "@(() => NavigateToEdit())" Class="mt-4">
+                    Edit
+                </MudButton>
+            </AuthorizeView>
         </MudPaper>
     }
 </MudContainer>
@@ -28,5 +36,9 @@
     protected override async Task OnInitializedAsync() {
         string decodeName = Uri.UnescapeDataString(Name).Trim();
         plant = await PlantService.GetPlantByNameAsync(decodeName);
+    }
+
+    private void NavigateToEdit() {
+        NavigationManager.NavigateTo($"plant/{Uri.EscapeDataString(Name)}/edit");
     }
 }

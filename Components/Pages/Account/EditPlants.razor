@@ -1,0 +1,67 @@
+@page "/plant/{Name}/edit"
+@using Microsoft.AspNetCore.Authorization
+@using BlazorApp.Models
+@using BlazorApp.Services
+@attribute [Authorize(Roles = "Admin")]
+@inject PlantService PlantService
+@inject NavigationManager NavigationManager
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+    @if (plant == null) {
+        <MudProgressCircular Indeterminate="true" />
+    } else {
+        <MudPaper Elevation="4" Class="pa-8" Style="position: relative">
+            <EditForm Model="plant" OnValidSubmit="SavePlant">
+                <DataAnnotationsValidator />
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Name</b></MudText>
+                        <MudTextField @bind-Value="plant.Name" Class="mb-4" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Database</b></MudText>
+                        <MudTextField @bind-Value="plant.Database" Class="mb-4" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Enabled</b></MudText>
+                <MudSwitch @bind-Value="plant.Enabled" Class="mb-4" />
+
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Secondary" Class="mr-2">
+                    Save
+                </MudButton>
+                <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Error">
+                    Cancel
+                </MudButton>
+            </EditForm>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public string Name {get; set;} = string.Empty;
+
+    private Plant? plant;
+    private string? originalName;
+
+    protected override async Task OnInitializedAsync() {
+        originalName = Uri.UnescapeDataString(Name);
+        plant = await PlantService.GetPlantByNameAsync(originalName);
+    }
+
+    private async Task SavePlant(){
+        if (plant is null) {
+            return;
+        }
+
+        plant.DateUpdated = DateTime.UtcNow;
+        await PlantService.Update(plant);
+        NavigationManager.NavigateTo($"/plant/{Uri.EscapeDataString(plant.Name)}");
+    }
+
+    private void Cancel(){
+        NavigationManager.NavigateTo($"/plant/{Uri.EscapeDataString(originalName!)}");
+    }
+}
