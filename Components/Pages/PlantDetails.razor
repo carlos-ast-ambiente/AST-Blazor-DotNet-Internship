@@ -1,0 +1,32 @@
+@page "/plant/{Name}"
+@using BlazorApp.Models
+@using BlazorApp.Services
+@inject PlantService PlantService
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+    @if (plant == null) {
+        <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+    } else {
+        <MudPaper Elevation="4" Class="pa-8">
+            <MudText Typo="Typo.h5" Class="mb-8">@plant.Name</MudText>
+            <MudText Typo="Typo.body1" Class="mb-4">@plant.Database</MudText>
+            <MudText Typo="Typo.body1" Class="mb-4">@plant.DateCreated</MudText>
+            <MudText Typo="Typo.body1" Class="mb-4">@plant.DateUpdated</MudText>
+            <MudChip T="string" Class="mb-4" Color="@(plant.Enabled ? Color.Success : Color.Error)" Size="Size.Small">
+                @(plant.Enabled ? "Enabled" : "Disabled")
+            </MudChip>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public string Name { get; set; } = string.Empty;
+
+    private Plant? plant;
+
+    protected override async Task OnInitializedAsync() {
+        string decodeName = Uri.UnescapeDataString(Name).Trim();
+        plant = await PlantService.GetPlantByNameAsync(decodeName);
+    }
+}
