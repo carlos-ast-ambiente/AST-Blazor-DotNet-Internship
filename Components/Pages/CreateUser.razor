@@ -1,23 +1,21 @@
-@page "/register"
+@page "/admin/users/createUser"
 @using BlazorApp.Models
 @using BlazorApp.Services
-@using Microsoft.AspNetCore.Identity
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authorization
-@attribute [AllowAnonymous]
-@inject UserService UserService
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
 @inject NavigationManager NavigationManager
-@inject UserManager<User> UserManager
+@attribute [Authorize(Roles = "Admin")]
+@inject UserService UserService
 
-<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-16">
-    <MudPaper Elevation="6" Class="pa-8">
-        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true" Class="mt-8">
-            Create Account
-        </MudText>
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+    <MudPaper Elevation="4" Class="pa-8">
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true" Class="mt-8">Create a new User</MudText>
 
         @if (!string.IsNullOrEmpty(_errorMessage)) {
             <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
-        }
+        } 
 
         <EditForm Model="@_model" OnValidSubmit="OnValidSubmit">
             <DataAnnotationsValidator />
@@ -25,53 +23,65 @@
             <MudTextField Label="Name" @bind-Value="_model.Name" For="@(() => _model.Name)" Variant="Variant.Outlined" Class="mb-4" />
 
             <MudTextField Label="Username" @bind-Value="_model.Username" For="@(() => _model.Username)" Variant="Variant.Outlined" Class="mb-4" />
-
             <MudTextField Label="Email" @bind-Value="_model.Email" For="@(() => _model.Email)" Variant="Variant.Outlined" Class="mb-4" />
 
             <MudTextField Label="Password" @bind-Value="_model.Password" For="@(() => _model.Password)" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4" />
 
             <MudTextField Label="Confirm Password" @bind-Value="_model.ConfirmPassword" For="@(() => _model.ConfirmPassword)" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4" />
 
-            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Register</MudButton>
+            <MudSelect T="string" Label="Role" @bind-Value="_selectedRole" Variant="Variant.Outlined">
+                @foreach (var role in _allRoles)
+                {
+                    <MudSelectItem Value="@role">@role</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4 rounded-pill">Create</MudButton>
         </EditForm>
-        <MudText Align="Align.Center" Class="mt-4">
-            Already have an account? <MudLink href="/login">Login</MudLink>
-        </MudText>
-    </MudPaper>
+    </MudPaper>    
 </MudContainer>
 
 @code {
-    private RegisterModel _model = new();
+    private UserModel _model = new();
     private string? _errorMessage;
+    private string? _selectedRole;
+    private List<string> _allRoles = [];
+
+    protected override async Task OnInitializedAsync() {
+        _allRoles = await UserService.GetAllRolesAsync();
+
+        _selectedRole = _allRoles.FirstOrDefault();
+    }
 
     private async Task OnValidSubmit() {
         _errorMessage = null;
 
-        var user = new User {
-            UserName = _model.Username,
-            Email = _model.Email,
-            Name = _model.Name,
-            DateCreated = DateTime.UtcNow,
-            DateUpdated = DateTime.UtcNow,
-            Enabled = true
-        };
+        if (string.IsNullOrEmpty(_selectedRole)) {
+            _errorMessage = "Please select a role.";
+            return;
+        }
 
-        var result = await UserService.CreateUserAsync(_model.Name, _model.Username, _model.Email, _model.Password, "Client");
+        var result = await UserService.CreateUserAsync(
+            _model.Name,
+            _model.Username,
+            _model.Email,
+            _model.Password,
+            _selectedRole
+        );
 
         if (result.Succeeded) {
-            await UserManager.AddToRoleAsync(user, "Client"); //default client
-            NavigationManager.NavigateTo("/login");
-        }
-        else {
+            NavigationManager.NavigateTo("/admin/users");
+        } else {
             _errorMessage = string.Join(", ", result.Errors.Select(e => e.Description));
         }
     }
 
-    public class RegisterModel {
+    public class UserModel {
         [Required] public string Name { get; set; } = "";
         [Required] public string Username { get; set; } = "";
         [Required, EmailAddress] public string Email { get; set; } = "";
         [Required, MinLength(6)] public string Password { get; set; } = "";
         [Compare(nameof(Password))] public string ConfirmPassword { get; set; } = "";
+
     }
 }

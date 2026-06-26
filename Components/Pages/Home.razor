@@ -10,7 +10,7 @@
         </MudText>
         
         <MudGrid Class="mt-8">
-            <AuthorizeView Roles="Admin">
+            <AuthorizeView Roles="Admin, Technician">
                 <MudItem xs="12" sm="6" md="4">
                     <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
                         <MudText Typo="Typo.h6">Users</MudText>
@@ -20,14 +20,15 @@
                 </MudItem>
             </AuthorizeView>
 
-            <AuthorizeView Roles="Admin,Technician">
-                <MudItem xs="12" sm="6" md="4">
-                    <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
-                        <MudText Typo="Typo.h6">Plants</MudText>
-                        <MudText Typo="Typo.body2">Manage and monitor your plants.</MudText>
-                        <MudButton Href="/plants" Variant="Variant.Text" Color="Color.Primary" Class="mt-2">Go to Plants</MudButton>
-                    </MudPaper>
-                </MudItem>
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
+                    <MudText Typo="Typo.h6">Plants</MudText>
+                    <MudText Typo="Typo.body2">Manage and monitor your plants.</MudText>
+                    <MudButton Href="/plant" Variant="Variant.Text" Color="Color.Primary" Class="mt-2">Go to Plants</MudButton>
+                </MudPaper>
+            </MudItem>
+
+            <AuthorizeView Roles="Admin, Technician">
                 <MudItem xs="12" sm="6" md="4">
                     <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
                         <MudText Typo="Typo.h6">Groups</MudText>

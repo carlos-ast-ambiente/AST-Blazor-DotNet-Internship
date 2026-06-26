@@ -1,0 +1,8 @@
+@page "/admin/users/{Username}"
+@using Microsoft.AspNetCore.Authorization
+@using BlazorApp.Models
+@using BlazorApp.Services
+@attribute [Authorize(Roles = "Admin")]
+@inject PlantService UserService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime

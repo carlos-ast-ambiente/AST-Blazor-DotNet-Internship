@@ -1,0 +1,41 @@
+@inject NavigationManager NavManager
+
+<MudPaper Elevation="6" Class="w-50 py-2 px-4 mb-4 rounded-pill mx-auto" Justify="Justify.Center">
+    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Justify="Justify.Center">
+        <MudButton Variant="@GetActiveVariant("/admin/users")" 
+                   Color="Color.Primary" 
+                   Href="/admin/users"
+                   Class="rounded-pill mr-9">
+            Users
+        </MudButton>
+
+        <MudButton Variant="@GetActiveVariant("/admin/plants")" 
+                   Color="Color.Primary" 
+                   Href="/admin/plants"
+                   Class="rounded-pill mr-9">
+            Plants
+        </MudButton>
+
+        <MudButton Variant="@GetActiveVariant("/admin/groups")" 
+                   Color="Color.Primary" 
+                   Href="/admin/groups"
+                   Class="rounded-pill mr-9">
+            Groups
+        </MudButton>
+
+        <MudButton Variant="@GetActiveVariant("/admin/variables")" 
+                   Color="Color.Primary" 
+                   Href="/admin/variables"
+                   Class="rounded-pill">
+            Variables
+        </MudButton>
+    </MudStack>
+</MudPaper>
+
+
+@code {
+    private Variant GetActiveVariant(string href)
+    {
+        return NavManager.Uri.EndsWith(href) ? Variant.Filled : Variant.Text;
+    }
+}

@@ -1,0 +1,39 @@
+@page "/admin"
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+    <AuthorizeView Roles="Admin">
+        <MudPaper Elevation="6" Class="pa-8">
+            <MudText Typo="Typo.h3" Align="Align.Center" GutterBottom="true">Admin Management</MudText>
+            
+            <MudGrid Class="mt-8">
+                <MudItem xs="12" sm="6" md="4">
+                    <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
+                        <MudText Typo="Typo.h6">Users</MudText>
+                        <MudButton Href="/admin/users" Variant="Variant.Text" Color="Color.Primary" Class="mt-2">Go to Users</MudButton>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="4">
+                    <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
+                        <MudText Typo="Typo.h6">Plants</MudText>
+                        <MudButton Href="/admin/plants" Variant="Variant.Text" Color="Color.Primary" Class="mt-2">Go to Plants</MudButton>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="4">
+                    <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
+                        <MudText Typo="Typo.h6">Groups</MudText>
+                        <MudButton Href="/admin/groups" Variant="Variant.Text" Color="Color.Primary" Class="mt-2">Go to Groups</MudButton>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="4">
+                    <MudPaper Class="pa-4" Elevation="2" Style="height: 100%">
+                        <MudText Typo="Typo.h6">Variables</MudText>
+                        <MudButton Href="/admin/variables" Variant="Variant.Text" Color="Color.Primary" Class="mt-2">Go to Variables</MudButton>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </AuthorizeView>
+</MudContainer>

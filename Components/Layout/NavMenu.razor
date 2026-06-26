@@ -6,16 +6,21 @@
                 <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
             </Authorized>
         </AuthorizeView>
-        <AuthorizeView Roles="Admin">
+        <AuthorizeView Roles="Admin, Technician">
             <Authorized>
                 <MudNavLink Href="/users" Icon="@Icons.Material.Filled.Person">Users</MudNavLink>
             </Authorized>
         </AuthorizeView>
-        <AuthorizeView Roles="Admin,Technician">
+        <AuthorizeView Roles="Admin, Technician, Client">
             <Authorized>
-                <MudNavLink Href="/plants" Icon="@Icons.Material.Filled.Nature">Plants</MudNavLink>
+                <MudNavLink Href="/plant" Icon="@Icons.Material.Filled.Nature">Plants</MudNavLink>
                 <MudNavLink Href="/groups" Icon="@Icons.Material.Filled.Group">Groups</MudNavLink>
                 <MudNavLink Href="/variables" Icon="@Icons.Material.Filled.CenterFocusStrong">Variables</MudNavLink>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <MudNavLink Href="/admin" Icon="@Icons.Material.Filled.Settings">Admin</MudNavLink>
             </Authorized>
         </AuthorizeView>
     </MudNavMenu>

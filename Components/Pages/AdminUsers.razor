@@ -1,12 +1,17 @@
-@page "/users"
+@page "/admin/users"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
 @using BlazorApp.Models
 @using BlazorApp.Services
-@attribute [Authorize(Roles = "Admin, Technician")]
+@attribute [Authorize(Roles = "Admin")]
 @inject UserService UserService
+@inject NavigationManager NavigationManager
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+
+    <BlazorApp.Components.Pages.AdminHeader />
+
     <MudPaper Elevation="6" Class="pa-8">
         <MudText Typo="Typo.h4" Class="mb-4">Users</MudText>
 
@@ -14,7 +19,7 @@
             <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
         }
         else {
-            <MudTable Items="_users" Hover="true">
+            <MudTable Items="_users" Dense="true" Hover="true">
                 <HeaderContent>
                     <MudTh>
                         <MudText Typo="Typo.h6">Name</MudText>
@@ -28,11 +33,14 @@
                     <MudTh>
                         <MudText Typo="Typo.h6">Plants</MudText>
                     </MudTh>
+                    <MudTh>
+                        <MudText Typo="Typo.h6">Edit</MudText>
+                    </MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="Name">@context.Name</MudTd>
-                    <MudTd DataLabel="Username">@context.UserName</MudTd>
-                    <MudTd DataLabel="Email">@context.Email</MudTd>
+                    <MudTd DataLabel="Name" @onclick="() => NavigateToUser(context)">@context.Name</MudTd>
+                    <MudTd DataLabel="Username" @onclick="() => NavigateToUser(context)">@context.UserName</MudTd>
+                    <MudTd DataLabel="Email" @onclick="() => NavigateToUser(context)">@context.Email</MudTd>
                     <MudTh DataLabel="Plants">
                         @if (context.Plants.Any()) {
                             @string.Join(", ", context.Plants.Select(p => p.Name));
@@ -40,8 +48,16 @@
                             <i>No plants</i>
                         }
                     </MudTh>
+                    <MudTd>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => NavigateToEdit(context))" Class="rounded-pill">
+                            Edit
+                        </MudButton>
+                    </MudTd>
                 </RowTemplate>
             </MudTable>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@CreateUser" Class="mt-6 rounded-pill">
+                Create a new User
+            </MudButton>
         }
     </MudPaper>
 </MudContainer>
@@ -56,8 +72,21 @@
 
     private async Task ReloadUsersAsync() {
         _loading = true;
+
         _users = await UserService.GetUsersAsync();
 
         _loading = false;
+    }
+
+    private void NavigateToEdit(User user) {
+        NavigationManager.NavigateTo($"/admin/users/{user.Id}/editUsers");
+    }
+
+    private void NavigateToUser(User user) {
+        NavigationManager.NavigateTo($"/admin/users/{user.Id}");
+    }
+
+    private void CreateUser() {
+        NavigationManager.NavigateTo("/admin/users/createUser");
     }
 }

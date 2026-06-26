@@ -1,9 +1,10 @@
-@page "/plant/{Name}/edit"
+@page "/admin/plant/{Name}/editPlant"
 @using Microsoft.AspNetCore.Authorization
 @using BlazorApp.Models
 @using BlazorApp.Services
 @attribute [Authorize(Roles = "Admin")]
 @inject PlantService PlantService
+@inject UserService UserService
 @inject NavigationManager NavigationManager
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
@@ -20,18 +21,32 @@
                         <MudTextField @bind-Value="plant.Name" Class="mb-4" />
                     </MudItem>
                     <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Description</b></MudText>
+                        <MudTextField @bind-Value="plant.Description" Class="mb-4" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
                         <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Database</b></MudText>
                         <MudTextField @bind-Value="plant.Database" Class="mb-4" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Assign users</b></MudText>
+                        <MudSelect T="int" MultiSelection="true" SelectedValues="selectedUsersIds" SelectedValuesChanged="@(values => selectedUsersIds = values.ToHashSet())" Class="mb-4">
+                            @foreach (var user in Users) {
+                                <MudSelectItem T="int" Value="@user.Id">
+                                    @user.UserName
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
                     </MudItem>
                 </MudGrid>
 
                 <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Enabled</b></MudText>
                 <MudSwitch @bind-Value="plant.Enabled" Class="mb-4" />
 
-                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Secondary" Class="mr-2">
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mr-4 mt-4 rounded-pill">
                     Save
                 </MudButton>
-                <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Error">
+                <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Error" Class="mt-4 rounded-pill">
                     Cancel
                 </MudButton>
             </EditForm>
@@ -46,9 +61,18 @@
     private Plant? plant;
     private string? originalName;
 
+    private List<User> Users = [];
+    private HashSet<int> selectedUsersIds = [];
+
     protected override async Task OnInitializedAsync() {
         originalName = Uri.UnescapeDataString(Name);
         plant = await PlantService.GetPlantByNameAsync(originalName);
+
+        Users = await UserService.GetUsersAsync();
+
+        if (plant != null) {
+            selectedUsersIds = plant.Users.Select(u => u.Id).ToHashSet();
+        }
     }
 
     private async Task SavePlant(){
@@ -57,11 +81,12 @@
         }
 
         plant.DateUpdated = DateTime.UtcNow;
+        plant.Users = Users.Where(u => selectedUsersIds.Contains(u.Id)).ToList();
         await PlantService.Update(plant);
-        NavigationManager.NavigateTo($"/plant/{Uri.EscapeDataString(plant.Name)}");
+        NavigationManager.NavigateTo($"/admin/plant/{Uri.EscapeDataString(plant.Name)}");
     }
 
     private void Cancel(){
-        NavigationManager.NavigateTo($"/plant/{Uri.EscapeDataString(originalName!)}");
+        NavigationManager.NavigateTo($"/admin/plant/{Uri.EscapeDataString(originalName!)}");
     }
 }

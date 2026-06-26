@@ -1,4 +1,4 @@
-@page "/plant"
+@page "/admin/plants"
 @using Microsoft.AspNetCore.Authorization
 @using BlazorApp.Models
 @using BlazorApp.Services
@@ -7,12 +7,15 @@
 @inject PlantService PlantService
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+
+    <BlazorApp.Components.Pages.AdminHeader />
+    
     <MudText Typo="Typo.h4">Plants</MudText>
     <MudGrid Class="mt-4">
         @foreach (var plant in plants) {
             <MudItem xs="12" sm="6" md="4">
                 <div @onclick="() => NavigateToPlant(plant.Name)" style="cursor: pointer; display: block; height: 100%;">
-                    <MudCard Elevation="4" Class="hover-card" Style="height: 100%;">
+                    <MudCard Elevation="4" Class="hover-card" Style="height: 100%; position: relative;">
                         <MudCardHeader>
                             <CardHeaderContent>
                                 <MudText Typo="Typo.h6" Color="Color.Secondary"><b>@plant.Name</b></MudText>
@@ -26,6 +29,7 @@
                         </MudCardHeader>
                         <MudCardContent>
                             <MudText Typo="Typo.caption" Class="mt-2" Color="Color.Secondary">Click to view details</MudText>
+
                             <div class="d-flex flex-nowrap mt-auto ms-auto mb-3 me-3" style="max-width: 50%; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; gap: 4px;">
                                 
                                 @foreach (var user in plant.Users)
@@ -44,6 +48,16 @@
                 </div>
             </MudItem>
         }
+        <AuthorizeView Roles="Admin">
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="4" Class="hover-card" Style="height: 100%;" @onclick='() => NavigationManager.NavigateTo("/admin/plants/createPlant")'>
+                    <MudCardContent Class="d-flex flex-column align-center justify-center" Style="min-height: 140px;">
+                        <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Large" />
+                        <MudText Typo="Typo.h6">Add a new plant</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </AuthorizeView>
     </MudGrid>
 </MudContainer>
 
@@ -56,6 +70,6 @@
     }
 
     private void NavigateToPlant(string name) {
-        NavigationManager.NavigateTo($"/plant/{name}");
+        NavigationManager.NavigateTo($"/admin/plant/{name}");
     }
 }

@@ -1,9 +1,10 @@
-@page "/plants/create"
+@page "/admin/plants/createPlant"
 @using BlazorApp.Models
 @using System.ComponentModel.DataAnnotations
 @using BlazorApp.Services
 @using Microsoft.AspNetCore.Authorization
 @inject PlantService PlantService
+@inject UserService UserService
 @inject NavigationManager NavigationManager
 @attribute [Authorize(Roles = "Admin")]
 
@@ -20,14 +21,24 @@
 
             <MudTextField Label="Name" @bind-Value="_model.Name" For="@(() => _model.Name)" Variant="Variant.Outlined" Class="mb-4" />
 
+            <MudTextField Label="Description" @bind-Value="_model.Description" For="@(() => _model.Description)" Variant="Variant.Outlined" Class="mb-4" />
             <MudTextField Label="Database" @bind-Value="_model.Database" For="@(() => _model.Database)" Variant="Variant.Outlined" Class="mb-4" />
 
             <MudSelect T="bool" Label="Enabled" @bind-Value="_model.Enabled" Variant="Variant.Outlined" Class="mb-4">
                 <MudSelectItem T="bool" Value="true">True</MudSelectItem>
                 <MudSelectItem T="bool" Value="false">False</MudSelectItem>
             </MudSelect>
+            <MudItem xs="12" md="6">
+                    <MudSelect T="int" Label="Assign users" Variant="Variant.Outlined" MultiSelection="true" SelectedValues="selectedUsersIds" SelectedValuesChanged="@(values => selectedUsersIds = values.ToHashSet())" Class="mb-4">
+                        @foreach (var user in Users) {
+                            <MudSelectItem T="int" Value="@user.Id">
+                                @user.UserName
+                            </MudSelectItem>
+                        }
+                </MudSelect>
+            </MudItem>
 
-            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Create</MudButton>
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4 rounded-pill">Create</MudButton>
         </EditForm>
     </MudPaper>    
 </MudContainer>
@@ -36,23 +47,36 @@
     private PlantModel _model = new();
     private string? _errorMessage;
 
+    private List<User> Users = [];
+    private HashSet<int> selectedUsersIds = [];
+
+    
+    protected override async Task OnInitializedAsync()
+    {
+        Users = await UserService.GetUsersAsync();
+    }
+
     private async Task OnValidSubmit() {
         _errorMessage = null;
 
         var plant = new Plant {
             Name = _model.Name,
+            Description = _model.Description,
             Database = _model.Database,
             DateCreated = DateTime.UtcNow,
             DateUpdated = DateTime.UtcNow,
-            Enabled = _model.Enabled
+            Enabled = _model.Enabled,
+            Users = Users.Where(u => selectedUsersIds.Contains(u.Id)).ToList()
         };
 
         await PlantService.Insert(plant);
-        NavigationManager.NavigateTo("/plants");
+        NavigationManager.NavigateTo("/admin/plants");
     }
 
     public class PlantModel {
         [Required] public string Name { get; set; } = "";
+
+        [Required] public string Description {get; set;} = "";
         [Required] public string Database { get; set; } = "";
         [Required] public bool Enabled { get; set; } = false;
     }
