@@ -1,0 +1,58 @@
+@page "/plants"
+@using Microsoft.AspNetCore.Authorization
+@using BlazorApp.Models
+@using BlazorApp.Services
+@attribute [Authorize(Roles = "Admin,Technician")]
+@inject NavigationManager NavigationManager
+@inject PlantService PlantService
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+    <MudText Typo="Typo.h4">Plants</MudText>
+    <MudGrid Class="mt-4">
+        @foreach (var plant in plants) {
+            <MudItem xs="12" sm="6" md="4">
+                <div @onclick="() => NavigateToPlant(plant.Name)" style="cursor: pointer; display: block; height: 100%;">
+                    <MudCard Elevation="4" Class="hover-card" Style="height: 100%;">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">@plant.Name</MudText>
+                                <MudText Typo="Typo.body2">@plant.Database</MudText>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudChip T="string" Color="@(plant.Enabled ? Color.Success : Color.Error)" Size="Size.Small">
+                                    @(plant.Enabled ? "Enabled" : "Disabled")
+                                </MudChip>
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudText Typo="Typo.caption" Class="mt-2" Color="Color.Secondary">Click to view details</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </div>
+            </MudItem>
+        }
+        <AuthorizeView Roles="Admin">
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="4" Class="hover-card" Style="height: 100%;" @onclick='() => NavigationManager.NavigateTo("/plants/create")'>
+                    <MudCardContent Class="d-flex flex-column align-center justify-center" Style="min-height: 140px;">
+                        <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Large" />
+                        <MudText Typo="Typo.h6">Add a new plant</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </AuthorizeView>
+    </MudGrid>
+</MudContainer>
+
+
+@code {
+    private List<Plant> plants = new();
+    
+    protected override async Task OnInitializedAsync() {
+        plants = await PlantService.GetAllPlants();
+    }
+
+    private void NavigateToPlant(string name) {
+        NavigationManager.NavigateTo($"/plant/{name}");
+    }
+}

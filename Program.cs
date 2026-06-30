@@ -5,6 +5,7 @@ using MudBlazor.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using BlazorApp.Models;
+using BlazorApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,7 +44,12 @@ var connectionString = builder.Configuration.GetConnectionString("PostgreSQLLoca
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
-    
+
+builder.Services.AddScoped<PlantService>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<GroupService>();
+builder.Services.AddScoped<VariableService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
