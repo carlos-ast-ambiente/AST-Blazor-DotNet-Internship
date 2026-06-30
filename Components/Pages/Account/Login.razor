@@ -1,0 +1,49 @@
+@page "/login"
+@using Microsoft.AspNetCore.Authorization
+@attribute [AllowAnonymous]
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-16">
+    <MudPaper Elevation="6" Class="pa-8">
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true" Class="mt-8">
+            Login
+        </MudText>
+
+        @if (Error == "1") {
+            <MudAlert Severity="Severity.Error" Class="mb-4">Invalid username or password</MudAlert>
+        }
+
+        <form method="post" action="/account/login">
+            <AntiforgeryToken />
+
+            <MudTextField T="string"
+                          Label="Username"
+                          Variant="Variant.Outlined"
+                          Class="mb-4"
+                          Required="true"
+                          UserAttributes="@(new Dictionary<string, object> { { "name", "username" } })" />
+
+            <MudTextField T="string"
+                          Label="Password"
+                          InputType="InputType.Password"
+                          Variant="Variant.Outlined"
+                          Class="mb-4"
+                          Required="true"
+                          UserAttributes="@(new Dictionary<string, object> {{"name", "password"}})" />
+
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Login</MudButton>
+        </form>
+        <MudText Align="Align.Center" Class="mt-4">
+            Don't have an account? <MudLink href="/register">Register</MudLink>
+        </MudText>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private readonly Dictionary<string, object> _passwordInputAttributes = new()
+    {
+        ["name"] = "password"
+    };
+
+    [SupplyParameterFromQuery]
+    public string? Error { get; set; }
+}

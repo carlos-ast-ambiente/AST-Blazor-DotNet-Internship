@@ -1,14 +1,26 @@
 ﻿<MudDrawer Open="@SideBarOpen" Fixed="true" Elevation="1" Variant="@DrawerVariant.Mini" Color="Color.Secondary" ClipMode="DrawerClipMode.Always">
 
     <MudNavMenu>
-        <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
-        <MudNavLink Href="/counter" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
-        <MudNavLink Href="/weather" Icon="@Icons.Material.Filled.WbCloudy">Weather</MudNavLink>
-        <MudNavLink Href="/mudtest" Icon="@Icons.Material.Filled.CropSquare">MudBlazor Test</MudNavLink>
-        <MudNavLink Href="/users" Icon="@Icons.Material.Filled.Person">Users</MudNavLink>
-        <MudNavLink Href="/plants" Icon="@Icons.Material.Filled.Nature">Plants</MudNavLink>
-        <MudNavLink Href="/groups" Icon="@Icons.Material.Filled.Group">Groups</MudNavLink>
-        <MudNavLink Href="/variables" Icon="@Icons.Material.Filled.CenterFocusStrong">Variables</MudNavLink>
+        <AuthorizeView>
+            <Authorized>
+                <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+                <MudNavLink Href="/counter" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
+                <MudNavLink Href="/weather" Icon="@Icons.Material.Filled.WbCloudy">Weather</MudNavLink>
+                <MudNavLink Href="/mudtest" Icon="@Icons.Material.Filled.CropSquare">MudBlazor Test</MudNavLink>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <MudNavLink Href="/users" Icon="@Icons.Material.Filled.Person">Users</MudNavLink>
+            </Authorized>
+        </AuthorizeView>
+        <AuthorizeView Roles="Admin,Technician">
+            <Authorized>
+                <MudNavLink Href="/plants" Icon="@Icons.Material.Filled.Nature">Plants</MudNavLink>
+                <MudNavLink Href="/groups" Icon="@Icons.Material.Filled.Group">Groups</MudNavLink>
+                <MudNavLink Href="/variables" Icon="@Icons.Material.Filled.CenterFocusStrong">Variables</MudNavLink>
+            </Authorized>
+        </AuthorizeView>
     </MudNavMenu>
 </MudDrawer>
 

@@ -1,5 +1,152 @@
 @page "/users"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using BlazorApp.Models
+@attribute [Authorize(Roles = "Admin")]
+@inject UserManager<User> UserManager
+@inject RoleManager<IdentityRole<int>> RoleManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JSRuntime
 
-<MudMainContent>
-    <MudText Typo="Typo.h5">Users</MudText>
-</MudMainContent>
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+    <MudPaper Elevation="6" Class="pa-8">
+        <MudText Typo="Typo.h4" Class="mb-4">Users</MudText>
+
+        @if (!string.IsNullOrWhiteSpace(_message)) {
+            <MudAlert Severity="@_messageSeverity" Class="mb-4" ShowCloseIcon="true" CloseIconClicked="(() => _message = null)">@_message</MudAlert>
+        }
+
+        @if (_loading) {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        }
+        else {
+            <MudTable Items="_users" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Username</MudTh>
+                    <MudTh>Email</MudTh>
+                    <MudTh>Role</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Name">@context.Name</MudTd>
+                    <MudTd DataLabel="Username">@context.UserName</MudTd>
+                    <MudTd DataLabel="Email">@context.Email</MudTd>
+                    <MudTd DataLabel="Role">
+                        <MudSelect T="string" 
+                                   Value="@GetUserRole(context)" 
+                                   ValueChanged="@(role => UpdateRoleAsync(context, role))"
+                                   Disabled="@IsCurrentUser(context)"
+                                   Dense="true"
+                                   Margin="Margin.Dense"
+                                   Variant="Variant.Outlined">
+                            @foreach (var role in _allRoles)
+                            {
+                                <MudSelectItem Value="@role">@role</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd Class="text-end">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Error"
+                                   StartIcon="@Icons.Material.Filled.Delete"
+                                   Disabled="@IsCurrentUser(context)"
+                                   OnClick="@(() => ConfirmDeleteAsync(context))">
+                            Delete
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<User> _users = [];
+    private Dictionary<int, string> _userRoles = new();
+    private List<string> _allRoles = [];
+    private string? _message;
+    private Severity _messageSeverity = Severity.Info;
+    private string? _currentUserId;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync() {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _currentUserId = UserManager.GetUserId(authState.User);
+
+        _allRoles = await RoleManager.Roles.Select(r => r.Name!).ToListAsync();
+
+        await ReloadUsersAsync();
+    }
+
+    private async Task ReloadUsersAsync() {
+        _loading = true;
+        _users = await UserManager.Users
+            .OrderBy(u => u.UserName)
+            .ToListAsync();
+
+        _userRoles.Clear();
+        foreach (var user in _users) {
+            var roles = await UserManager.GetRolesAsync(user);
+            _userRoles[user.Id] = roles.FirstOrDefault() ?? "No Role";
+        }
+
+        _loading = false;
+    }
+
+    private string GetUserRole(User user) {
+        return _userRoles.TryGetValue(user.Id, out var role) ? role : "Loading...";
+    }
+
+    private bool IsCurrentUser(User user) {
+        return _currentUserId is not null && user.Id.ToString() == _currentUserId;
+    }
+
+    private async Task UpdateRoleAsync(User user, string newRole) {
+        var currentRoles = await UserManager.GetRolesAsync(user);
+        
+        var removeResult = await UserManager.RemoveFromRolesAsync(user, currentRoles);
+        if (!removeResult.Succeeded) {
+            _messageSeverity = Severity.Error;
+            _message = $"Error removing old roles: {string.Join(", ", removeResult.Errors.Select(e => e.Description))}";
+            return;
+        }
+
+        var addResult = await UserManager.AddToRoleAsync(user, newRole);
+        if (addResult.Succeeded) {
+            _messageSeverity = Severity.Success;
+            _message = $"Updated {user.UserName} to {newRole}.";
+            _userRoles[user.Id] = newRole;
+        } else {
+            _messageSeverity = Severity.Error;
+            _message = $"Error adding new role: {string.Join(", ", addResult.Errors.Select(e => e.Description))}";
+        }
+    }
+
+    private async Task ConfirmDeleteAsync(User user) {
+        if (IsCurrentUser(user)) {
+            _messageSeverity = Severity.Warning;
+            _message = "You cannot delete your own account from this page.";
+            return;
+        }
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Delete {user.UserName}?");
+
+        if (!confirmed) {
+            return;
+        }
+
+        var result = await UserManager.DeleteAsync(user);
+
+        if (result.Succeeded) {
+            _messageSeverity = Severity.Success;
+            _message = $"Deleted {user.UserName}.";
+            await ReloadUsersAsync();
+        }
+        else {
+            _messageSeverity = Severity.Error;
+            _message = string.Join(", ", result.Errors.Select(e => e.Description));
+        }
+    }
+}
