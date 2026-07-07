@@ -12,13 +12,14 @@ namespace BlazorApp.Models
         public string? Table { get; set; }
         public string? Column { get; set; }
 
+        public string? Description {get; set;}
         public DateTime DateCreated { get; set; }
         public DateTime DateUpdated { get; set; }
         public string? Unit { get; set; }
         public int Min { get; set; }
         public int Max { get; set; }
         public bool Enabled { get; set; }
-        public int GroupId { get; set; }
+        public int? GroupId { get; set; }
         public Group? Group { get; set; }
 
         public List<Plant> Plants { get; set; }

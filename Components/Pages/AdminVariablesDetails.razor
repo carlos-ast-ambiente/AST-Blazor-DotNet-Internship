@@ -1,0 +1,114 @@
+@page "/admin/variables/{Id:int}"
+@using Microsoft.AspNetCore.Authorization
+@using BlazorApp.Models
+@using BlazorApp.Services
+@attribute [Authorize(Roles = "Admin")]
+@inject VariableService VariableService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+
+    <BlazorApp.Components.Pages.AdminHeader />
+
+    @if (variable == null) {
+        <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+    } else {
+        <MudPaper Elevation="4" Class="pa-8" Style="position: relative">
+            <MudText Typo="Typo.h5" Class="mb-8" Color="Color.Secondary">@variable.Name</MudText>
+            <MudText Typo="Typo.body1" Class="mb-4">@variable.Description</MudText>
+            <MudText Typo="Typo.body1" Class="mb-4">@variable.DateCreated</MudText>
+            <MudText Typo="Typo.body1" Class="mb-4">@variable.DateUpdated</MudText>
+            <MudChip T="string" Class="mb-4" Color="@(variable.Enabled ? Color.Success : Color.Error)" Size="Size.Medium" Style="position: absolute; top: 32px; right:32px">
+                @(variable.Enabled ? "Enabled" : "Disabled")
+            </MudChip>
+            <AuthorizeView Roles="Admin">
+
+                <div class="d-flex justify-space-between align-start mt-4">
+
+                    <div>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick = "@NavigateToEdit" Class="mr-4 mt-4 rounded-pill">
+                            Edit
+                        </MudButton>
+
+                        <MudButton Variant="Variant.Filled"
+                           Color="Color.Error"
+                           StartIcon="@Icons.Material.Filled.Delete"
+                           OnClick="@ConfirmDeleteAsync"
+                           Class="mt-4 rounded-pill">
+                            Delete
+                        </MudButton>
+                    </div>
+
+                    <div class="d-flex flex-column align-end gap-1">
+
+                        @if (variable.Group != null)
+                        {
+                            <MudChip T="string"
+                                    Size="Size.Medium"
+                                    Color="Color.Secondary"
+                                    Class="mr-4"
+                                    Href="/admin/groups">
+                                @variable.Group.Name
+                            </MudChip>
+                        } else {
+                            <MudText Class="mt-2 mb-3">No groups</MudText>
+                        }
+
+                        <div class="d-flex flex-nowrap justify-end gap-1 ms-auto mb-3 me-3" style="overflow-x: auto; white-space: nowrap; scrollbar-width: none;">
+
+                            @if (variable.Plants?.Any() == true)
+                            {
+                                @foreach (var plant in variable.Plants)
+                                {
+                                    <MudChip T="string"
+                                            Size="Size.Medium"
+                                            Color="Color.Secondary"
+                                            Href="/admin/plants">
+                                        @plant.Name
+                                    </MudChip>
+                                }
+                            }
+                            else
+                            {
+                                <MudText>No plants</MudText>
+                            }
+                        </div>
+
+                    </div>
+
+                </div>
+            </AuthorizeView>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int Id {get; set;}
+
+    private Variable? variable;
+
+    protected override async Task OnInitializedAsync() {
+        variable = await VariableService.GetSingleVarAsync(Id);
+    }
+
+    private void NavigateToEdit() {
+        NavigationManager.NavigateTo($"/admin/variables/{Id}/editVariables");
+    }
+
+    private async Task ConfirmDeleteAsync() {
+        if (variable is null) {
+            return;
+        }
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Delete{variable.Name}?");
+
+        if (!confirmed) {
+            return;
+        }
+
+        await VariableService.Delete(variable.Id);
+        NavigationManager.NavigateTo("/admin/variables");
+    }
+}

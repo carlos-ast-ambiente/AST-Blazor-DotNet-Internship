@@ -1,0 +1,102 @@
+@page "/admin/variables/{Id:int}/editVariables"
+@using Microsoft.AspNetCore.Authorization
+@using BlazorApp.Models
+@using BlazorApp.Services
+@attribute [Authorize(Roles = "Admin")]
+@inject VariableService VariableService
+@inject PlantService PlantService
+@inject GroupService GroupService
+@inject NavigationManager NavigationManager
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+    @if (variable == null) {
+        <MudProgressCircular Indeterminate="true" />
+    } else {
+        <MudPaper Elevation="4" Class="pa-8" Style="position: relative">
+            <EditForm Model="variable" OnValidSubmit="SaveVariable">
+                <DataAnnotationsValidator />
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Name</b></MudText>
+                        <MudTextField @bind-Value="variable.Name" Class="mb-4" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Description</b></MudText>
+                        <MudTextField @bind-Value="variable.Description" Class="mb-4" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Assign plants</b></MudText>
+                        <MudSelect T="int" MultiSelection="true" SelectedValues="selectedPlantsIds" SelectedValuesChanged="@(values => selectedPlantsIds = values.ToHashSet())" ToStringFunc="@(id => Plants.FirstOrDefault(p => p.Id == id)?.Name ?? "")" Class="mb-4">
+                            @foreach (var plant in Plants) {
+                                <MudSelectItem T="int" Value="@plant.Id">
+                                    @plant.Name
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Assign groups</b></MudText>
+                        <MudSelect T="int?" @bind-value="selectedGroupId" Class="mb-4">
+                            @foreach (var group in Groups) {
+                                <MudSelectItem T="int?" Value="@group.Id">
+                                    @group.Name
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+
+                <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Enabled</b></MudText>
+                <MudSwitch @bind-Value="variable.Enabled" Class="mb-4" />
+
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mr-4 mt-4 rounded-pill">
+                    Save
+                </MudButton>
+                <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Error" Class="mt-4 rounded-pill">
+                    Cancel
+                </MudButton>
+            </EditForm>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int Id {get; set;}
+
+    private Variable? variable;
+
+    private List<Plant> Plants = [];
+    private HashSet<int> selectedPlantsIds = [];
+    private List<Group> Groups = [];
+    private int? selectedGroupId;
+
+    protected override async Task OnInitializedAsync() {
+        variable = await VariableService.GetSingleVarAsync(Id);
+
+        Plants = await PlantService.GetAllPlants();
+        Groups = await GroupService.GetAllGroups();
+
+        if (variable != null) {
+            selectedPlantsIds = variable.Plants.Select(p => p.Id).ToHashSet();
+            selectedGroupId = variable.GroupId;
+        }
+    }
+
+    private async Task SaveVariable(){
+        if (variable is null) {
+            return;
+        }
+
+        variable.DateUpdated = DateTime.UtcNow;
+        variable.Plants = Plants.Where(p => selectedPlantsIds.Contains(p.Id)).ToList();
+        variable.GroupId = selectedGroupId ?? 0;
+        await VariableService.Update(variable);
+        NavigationManager.NavigateTo($"/admin/variables/{Id}");
+    }
+
+    private void Cancel(){
+        NavigationManager.NavigateTo($"/admin/variables/{Id}");
+    }
+}

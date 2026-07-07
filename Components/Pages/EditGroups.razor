@@ -1,43 +1,28 @@
-@page "/admin/plant/{Name}/editPlant"
+@page "/admin/groups/{Id:int}/editGroups"
 @using Microsoft.AspNetCore.Authorization
 @using BlazorApp.Models
 @using BlazorApp.Services
 @attribute [Authorize(Roles = "Admin")]
-@inject PlantService PlantService
-@inject UserService UserService
+@inject GroupService GroupService
 @inject VariableService VariableService
 @inject NavigationManager NavigationManager
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
-    @if (plant == null) {
+    @if (group == null) {
         <MudProgressCircular Indeterminate="true" />
     } else {
         <MudPaper Elevation="4" Class="pa-8" Style="position: relative">
-            <EditForm Model="plant" OnValidSubmit="SavePlant">
+            <EditForm Model="group" OnValidSubmit="SaveGroup">
                 <DataAnnotationsValidator />
 
                 <MudGrid>
                     <MudItem xs="12" md="6">
                         <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Name</b></MudText>
-                        <MudTextField @bind-Value="plant.Name" Class="mb-4" />
+                        <MudTextField @bind-Value="group.Name" Class="mb-4" />
                     </MudItem>
                     <MudItem xs="12" md="6">
                         <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Description</b></MudText>
-                        <MudTextField @bind-Value="plant.Description" Class="mb-4" />
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Database</b></MudText>
-                        <MudTextField @bind-Value="plant.Database" Class="mb-4" />
-                    </MudItem>
-                    <MudItem xs="12" md="6">
-                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Assign users</b></MudText>
-                        <MudSelect T="int" MultiSelection="true" SelectedValues="selectedUsersIds" SelectedValuesChanged="@(values => selectedUsersIds = values.ToHashSet())" ToStringFunc="@(id => Users.FirstOrDefault(u => u.Id == id)?.UserName ?? "")" Class="mb-4">
-                            @foreach (var user in Users) {
-                                <MudSelectItem T="int" Value="@user.Id">
-                                    @user.UserName
-                                </MudSelectItem>
-                            }
-                        </MudSelect>
+                        <MudTextField @bind-Value="group.Description" Class="mb-4" />
                     </MudItem>
                     <MudItem xs="12" md="6">
                         <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Assign variables</b></MudText>
@@ -52,7 +37,7 @@
                 </MudGrid>
 
                 <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Enabled</b></MudText>
-                <MudSwitch @bind-Value="plant.Enabled" Class="mb-4" />
+                <MudSwitch @bind-Value="group.Enabled" Class="mb-4" />
 
                 <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mr-4 mt-4 rounded-pill">
                     Save
@@ -67,42 +52,35 @@
 
 @code {
     [Parameter]
-    public string Name {get; set;} = string.Empty;
+    public int Id {get; set;}
 
-    private Plant? plant;
-    private string? originalName;
+    private Group? group;
 
-    private List<User> Users = [];
-    private HashSet<int> selectedUsersIds = [];
     private List<Variable> Variables = [];
     private HashSet<int> selectedVariablesIds = [];
 
     protected override async Task OnInitializedAsync() {
-        originalName = Uri.UnescapeDataString(Name);
-        plant = await PlantService.GetPlantByNameAsync(originalName);
+        group = await GroupService.GetGroupAsync(Id);
 
-        Users = await UserService.GetUsersAsync();
         Variables = await VariableService.GetVariablesAsync();
 
-        if (plant != null) {
-            selectedUsersIds = plant.Users.Select(u => u.Id).ToHashSet();
-            selectedVariablesIds = plant.Variables.Select(v => v.Id).ToHashSet();
+        if (group != null) {
+            selectedVariablesIds = group.Variables.Select(v => v.Id).ToHashSet();
         }
     }
 
-    private async Task SavePlant(){
-        if (plant is null) {
+    private async Task SaveGroup(){
+        if (group is null) {
             return;
         }
 
-        plant.DateUpdated = DateTime.UtcNow;
-        plant.Users = Users.Where(u => selectedUsersIds.Contains(u.Id)).ToList();
-        plant.Variables = Variables.Where(v => selectedVariablesIds.Contains(v.Id)).ToList();
-        await PlantService.Update(plant);
-        NavigationManager.NavigateTo($"/admin/plant/{Uri.EscapeDataString(plant.Name)}");
+        group.DateUpdated = DateTime.UtcNow;
+        group.Variables = Variables.Where(v => selectedVariablesIds.Contains(v.Id)).ToList();
+        await GroupService.Update(group);
+        NavigationManager.NavigateTo($"/admin/groups/{Id}");
     }
 
     private void Cancel(){
-        NavigationManager.NavigateTo($"/admin/plant/{Uri.EscapeDataString(originalName!)}");
+        NavigationManager.NavigateTo($"/admin/groups/{Id}");
     }
 }

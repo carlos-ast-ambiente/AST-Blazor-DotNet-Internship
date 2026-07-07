@@ -1,0 +1,94 @@
+@page "/admin/variables/createVariable"
+@using BlazorApp.Models
+@using System.ComponentModel.DataAnnotations
+@using BlazorApp.Services
+@using Microsoft.AspNetCore.Authorization
+@inject VariableService VariableService
+@inject PlantService PlantService
+@inject GroupService GroupService
+@inject NavigationManager NavigationManager
+@attribute [Authorize(Roles = "Admin")]
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+    <MudPaper Elevation="4" Class="pa-8">
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true" Class="mt-8">Create a Variable</MudText>
+
+        @if (!string.IsNullOrEmpty(_errorMessage)) {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
+        } 
+
+        <EditForm Model="@_model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+
+            <MudTextField Label="Name" @bind-Value="_model.Name" For="@(() => _model.Name)" Variant="Variant.Outlined" Class="mb-4" />
+
+            <MudTextField Label="Description" @bind-Value="_model.Description" For="@(() => _model.Description)" Variant="Variant.Outlined" Class="mb-4" />
+
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudSelect T="int" MultiSelection="true" SelectedValues="selectedPlantsIds" SelectedValuesChanged="@(values => selectedPlantsIds = values.ToHashSet())" ToStringFunc="@(id => Plants.FirstOrDefault(p => p.Id == id)?.Name ?? "")" Class="mb-4" Label="Assign plants" Variant="Variant.Outlined">
+                        @foreach (var plant in Plants) {
+                            <MudSelectItem T="int" Value="@plant.Id">
+                                @plant.Name
+                            </MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudSelect T="int?" @bind-value="selectedGroupId" Class="mb-4" Label="Assign groups" Variant="Variant.Outlined">
+                        @foreach (var group in Groups) {
+                            <MudSelectItem T="int?" Value="@group.Id">
+                                @group.Name
+                            </MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+
+            <MudSelect T="bool" Label="Enabled" @bind-Value="_model.Enabled" Variant="Variant.Outlined" Class="mb-4">
+                <MudSelectItem T="bool" Value="true">True</MudSelectItem>
+                <MudSelectItem T="bool" Value="false">False</MudSelectItem>
+            </MudSelect>
+
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4 rounded-pill">Create</MudButton>
+        </EditForm>
+    </MudPaper>    
+</MudContainer>
+
+@code {
+    private VariableModel _model = new();
+    private string? _errorMessage;
+
+    private List<Plant> Plants = [];
+    private List<Group> Groups = [];
+    
+    private HashSet<int> selectedPlantsIds = [];
+    private int? selectedGroupId;
+
+    protected override async Task OnInitializedAsync() {
+        Plants = await PlantService.GetAllPlants();
+        Groups = await GroupService.GetAllGroups();
+    }
+
+    private async Task OnValidSubmit() {
+        _errorMessage = null;
+
+        var variable = new Variable {
+            Name = _model.Name,
+            Description = _model.Description,
+            DateCreated = DateTime.UtcNow,
+            DateUpdated = DateTime.UtcNow,
+            Enabled = _model.Enabled
+        };
+
+        await VariableService.Insert(variable);
+        NavigationManager.NavigateTo("/admin/variables");
+    }
+
+    public class VariableModel {
+        [Required] public string Name { get; set; } = "";
+
+        [Required] public string Description {get; set;} = "";
+        [Required] public bool Enabled { get; set; } = false;
+    }
+}

@@ -36,11 +36,30 @@
                     Delete
                 </MudButton>
 
-                <div class="d-flex flex-nowrap justify-end gap-1 mt-auto ms-auto mb-3 me-3" style="width: 90%; max-width: 100%; overflow-x: auto; overflow-y: auto; white-space: nowrap; ms-overflow-style: none; scrollbar-width: none;">
+                <div class="d-flex flex-nowrap justify-end gap-1 mt-auto ms-auto mb-2 me-3"
+                    style="width: 90%; max-width: 100%; overflow-x: auto; white-space: nowrap; scrollbar-width: none;">
+
                     @foreach (var user in plant.Users)
                     {
-                        <MudChip T="string" Size="Size.Medium" Color="Color.Secondary" Href="@($"/admin/users")">
+                        <MudChip T="string"
+                                Size="Size.Medium"
+                                Color="Color.Secondary"
+                                Href="@($"/admin/users/{user.Id}")">
                             @user.UserName
+                        </MudChip>
+                    }
+                </div>
+
+                <div class="d-flex flex-nowrap justify-end gap-1 ms-auto mb-3 me-3"
+                    style="width: 90%; max-width: 100%; overflow-x: auto; white-space: nowrap; scrollbar-width: none;">
+
+                    @foreach (var variable in plant.Variables)
+                    {
+                        <MudChip T="string"
+                                Size="Size.Medium"
+                                Color="Color.Primary"
+                                Href="@($"/admin/variables/{variable.Id}")">
+                            @variable.Name
                         </MudChip>
                     }
                 </div>

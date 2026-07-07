@@ -8,6 +8,7 @@
 @inject NavigationManager NavigationManager
 @attribute [Authorize(Roles = "Admin")]
 @inject UserService UserService
+@inject PlantService PlantService
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
     <MudPaper Elevation="4" Class="pa-8">
@@ -36,6 +37,16 @@
                 }
             </MudSelect>
 
+            <MudItem xs="12" md="6">
+                <MudSelect T="int" MultiSelection="true" SelectedValues="selectedPlantsIds" SelectedValuesChanged="@(values => selectedPlantsIds = values.ToHashSet())" ToStringFunc="@(id => Plants.FirstOrDefault(p => p.Id == id)?.Name ?? "")" Class="mb-4" Variant="Variant.Outlined" Label="Assign plants">
+                    @foreach (var plant in Plants) {
+                        <MudSelectItem T="int" Value="@plant.Id">
+                            @plant.Name
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
             <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4 rounded-pill">Create</MudButton>
         </EditForm>
     </MudPaper>    
@@ -47,10 +58,15 @@
     private string? _selectedRole;
     private List<string> _allRoles = [];
 
+    private List<Plant> Plants = [];
+    private HashSet<int> selectedPlantsIds = [];
+
     protected override async Task OnInitializedAsync() {
         _allRoles = await UserService.GetAllRolesAsync();
 
         _selectedRole = _allRoles.FirstOrDefault();
+
+        Plants = await PlantService.GetAllPlants();
     }
 
     private async Task OnValidSubmit() {

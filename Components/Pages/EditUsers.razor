@@ -10,6 +10,7 @@
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
 @inject BlazorApp.Services.UserService UserService
+@inject PlantService PlantService
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
     <MudPaper Elevation="6" Class="pa-8">
@@ -57,6 +58,17 @@
                             </MudSelect>
                         </MudItem>
 
+                        <MudItem xs="12" md="6">
+                            <MudText Typo="Typo.h6">Assign plants</MudText>
+                            <MudSelect T="int" MultiSelection="true" SelectedValues="selectedPlantsIds" SelectedValuesChanged="@(values => selectedPlantsIds = values.ToHashSet())" ToStringFunc="@(id => Plants.FirstOrDefault(p => p.Id == id)?.Name ?? "")" Class="mb-4">
+                                @foreach (var plant in Plants) {
+                                    <MudSelectItem T="int" Value="@plant.Id">
+                                        @plant.Name
+                                    </MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+
                     </MudGrid>
 
                     <MudStack Row="true" Spacing="6" Class="mt-8 w-100">
@@ -96,6 +108,9 @@
     private string? _message;
     private Severity _messageSeverity = Severity.Info;
 
+    private List<Plant> Plants = [];
+    private HashSet<int> selectedPlantsIds =[];
+
     protected override async Task OnInitializedAsync() {
         user = await UserService.GetUserAsync(Id);
 
@@ -103,6 +118,8 @@
             return;
 
         _allRoles = await UserService.GetAllRolesAsync();
+
+        Plants = await PlantService.GetAllPlants();
 
         _selectedRole = await UserService.GetUserRoleAsync(user);
     }

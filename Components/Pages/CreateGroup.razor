@@ -1,17 +1,17 @@
-@page "/admin/plants/createPlant"
+@page "/admin/plants/createGroup"
 @using BlazorApp.Models
 @using System.ComponentModel.DataAnnotations
 @using BlazorApp.Services
 @using Microsoft.AspNetCore.Authorization
-@inject PlantService PlantService
-@inject UserService UserService
+@inject GroupService GroupService
 @inject VariableService VariableService
+@inject UserService UserService
 @inject NavigationManager NavigationManager
 @attribute [Authorize(Roles = "Admin")]
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
     <MudPaper Elevation="4" Class="pa-8">
-        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true" Class="mt-8">Create a Plant</MudText>
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true" Class="mt-8">Create a Group</MudText>
 
         @if (!string.IsNullOrEmpty(_errorMessage)) {
             <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
@@ -23,21 +23,11 @@
             <MudTextField Label="Name" @bind-Value="_model.Name" For="@(() => _model.Name)" Variant="Variant.Outlined" Class="mb-4" />
 
             <MudTextField Label="Description" @bind-Value="_model.Description" For="@(() => _model.Description)" Variant="Variant.Outlined" Class="mb-4" />
-            <MudTextField Label="Database" @bind-Value="_model.Database" For="@(() => _model.Database)" Variant="Variant.Outlined" Class="mb-4" />
-
+            
             <MudSelect T="bool" Label="Enabled" @bind-Value="_model.Enabled" Variant="Variant.Outlined" Class="mb-4">
                 <MudSelectItem T="bool" Value="true">True</MudSelectItem>
                 <MudSelectItem T="bool" Value="false">False</MudSelectItem>
             </MudSelect>
-            <MudItem xs="12" md="6">
-                    <MudSelect T="int" Label="Assign users" Variant="Variant.Outlined" MultiSelection="true" SelectedValues="selectedUsersIds" SelectedValuesChanged="@(values => selectedUsersIds = values.ToHashSet())" ToStringFunc="@(id => Users.FirstOrDefault(u => u.Id == id)?.Name ?? "")" Class="mb-4">
-                        @foreach (var user in Users) {
-                            <MudSelectItem T="int" Value="@user.Id">
-                                @user.UserName
-                            </MudSelectItem>
-                        }
-                </MudSelect>
-            </MudItem>
             <MudItem xs="12" md="6">
                     <MudSelect T="int" Label="Assign variables" Variant="Variant.Outlined" MultiSelection="true" SelectedValues="selectedVariablesIds" SelectedValuesChanged="@(values => selectedVariablesIds = values.ToHashSet())" ToStringFunc="@(id => Variables.FirstOrDefault(v => v.Id == id)?.Name ?? "")" Class="mb-4">
                         @foreach (var variable in Variables) {
@@ -54,45 +44,39 @@
 </MudContainer>
 
 @code {
-    private PlantModel _model = new();
+    private GroupModel _model = new();
     private string? _errorMessage;
-
-    private List<User> Users = [];
-    private HashSet<int> selectedUsersIds = [];
 
     private List<Variable> Variables = [];
     private HashSet<int> selectedVariablesIds = [];
 
-
     
     protected override async Task OnInitializedAsync()
     {
-        Users = await UserService.GetUsersAsync();
-        Variables = await VariableService.GetVariablesAsync();
+        Variables = await VariableService.GetVariablesAsync(); //variables, add method to variable service
     }
 
     private async Task OnValidSubmit() {
         _errorMessage = null;
 
-        var plant = new Plant {
+        var group = new Group {
             Name = _model.Name,
             Description = _model.Description,
-            Database = _model.Database,
             DateCreated = DateTime.UtcNow,
             DateUpdated = DateTime.UtcNow,
             Enabled = _model.Enabled,
-            Users = Users.Where(u => selectedUsersIds.Contains(u.Id)).ToList()
+            Variables = Variables.Where(v => selectedVariablesIds.Contains(v.Id)).ToList()  //variables
         };
 
-        await PlantService.Insert(plant);
-        NavigationManager.NavigateTo("/admin/plants");
+        await GroupService.Insert(group);
+        NavigationManager.NavigateTo("/admin/groups");
     }
 
-    public class PlantModel {
+    public class GroupModel {
+        [Required] public int Id { get; set; }
         [Required] public string Name { get; set; } = "";
 
         [Required] public string Description {get; set;} = "";
-        [Required] public string Database { get; set; } = "";
         [Required] public bool Enabled { get; set; } = false;
     }
 }

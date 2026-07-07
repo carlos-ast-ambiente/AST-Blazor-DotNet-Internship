@@ -1,7 +1,93 @@
 @page "/admin/variables"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using BlazorApp.Models
+@using BlazorApp.Services
+@attribute [Authorize(Roles = "Admin")]
+@inject VariableService VariableService
+@inject NavigationManager NavigationManager
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
 
     <BlazorApp.Components.Pages.AdminHeader />
 
+    <MudPaper Elevation="6" Class="pa-8">
+        <MudText Typo="Typo.h4" Class="mb-4">Variables</MudText>
+
+        @if (_loading) {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        }
+        else {
+            <MudTable Items="variables" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>
+                        <MudText Typo="Typo.h6">Name</MudText>
+                    </MudTh>
+                    <MudTh>
+                        <MudText Typo="Typo.h6">Groups</MudText>
+                    </MudTh>
+                    <MudTh>
+                        <MudText Typo="Typo.h6">Plants</MudText>
+                    </MudTh>
+                    <MudTh>
+                        <MudText Typo="Typo.h6">Edit</MudText>
+                    </MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Name" @onclick="() => NavigateToVariable(context)">@context.Name</MudTd>
+                    <MudTd DataLabel="Name" @onclick="() => NavigateToVariable(context)">
+                        @if (context.Group == null) { <i>No Groups</i>}
+                        else {
+                            @context.Group.Name
+                        }
+                    </MudTd>
+                    <MudTh DataLabel="Plants">
+                        @if (context.Plants != null) {
+                            @string.Join(", ", context.Plants.Select(p => p.Name));
+                        } else {
+                            <i>No plants</i>
+                        }
+                    </MudTh>
+                    <MudTd>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => NavigateToEdit(context))" Class="rounded-pill">
+                            Edit
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@CreateVariable" Class="mt-6 rounded-pill">
+                Create a new Variable
+            </MudButton>
+        }
+    </MudPaper>
 </MudContainer>
+
+@code {
+    private List<Variable> variables = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync() {
+        await ReloadVariablesAsync();
+    }
+
+    private async Task ReloadVariablesAsync() {
+        _loading = true;
+
+        variables = await VariableService.GetVariablesAsync();
+
+        _loading = false;
+    }
+
+    private void NavigateToEdit(Variable variable) {
+        NavigationManager.NavigateTo($"/admin/variables/{variable.Id}/editVariables");
+    }
+
+    private void NavigateToVariable(Variable variable) {
+        NavigationManager.NavigateTo($"/admin/variables/{variable.Id}");
+    }
+
+    private void CreateVariable() {
+        NavigationManager.NavigateTo("/admin/variables/createVariable");
+    }
+}

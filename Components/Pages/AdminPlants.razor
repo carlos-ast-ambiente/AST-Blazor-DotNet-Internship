@@ -30,18 +30,42 @@
                         <MudCardContent>
                             <MudText Typo="Typo.caption" Class="mt-2" Color="Color.Secondary">Click to view details</MudText>
 
-                            <div class="d-flex flex-nowrap mt-auto ms-auto mb-3 me-3" style="max-width: 50%; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; gap: 4px;">
-                                
-                                @foreach (var user in plant.Users)
-                                {
-                                    <MudChip T="string"
-                                            Size="Size.Small"
-                                            Color="Color.Secondary"
-                                            Class="flex-shrink-0 m-0"
-                                            Href="@($"/admin/users/{user.Id}")">
-                                        @user.UserName
-                                    </MudChip>
-                                }
+                            <div class="d-flex justify-space-between align-center mt-3">
+
+                                <!-- Variables (left) -->
+                                <div class="d-flex flex-nowrap"
+                                    style="max-width:45%; overflow-x:auto; gap:4px; scrollbar-width:none; -ms-overflow-style:none;">
+
+                                    @if (plant.Variables != null)
+                                    {
+                                        @foreach (var variable in plant.Variables)
+                                        {
+                                            <MudChip T="string"
+                                                    Size="Size.Small"
+                                                    Color="Color.Primary"
+                                                    Href="@($"/admin/variables/{variable.Id}")">
+                                                @variable.Name
+                                            </MudChip>
+                                        }
+                                    }
+                                </div>
+
+                                <!-- Users (right) -->
+                                <div class="d-flex flex-nowrap"
+                                    style="max-width:45%; overflow-x:auto; gap:4px; scrollbar-width:none; -ms-overflow-style:none;">
+
+                                    @foreach (var user in plant.Users)
+                                    {
+                                        <MudChip T="string"
+                                                Size="Size.Small"
+                                                Color="Color.Secondary"
+                                                Class="flex-shrink-0 m-0"
+                                                Href="@($"/admin/users/{user.Id}")">
+                                            @user.UserName
+                                        </MudChip>
+                                    }
+                                </div>
+
                             </div>
                         </MudCardContent>
                     </MudCard>
