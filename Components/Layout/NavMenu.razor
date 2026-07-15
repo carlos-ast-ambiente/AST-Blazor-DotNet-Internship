@@ -6,21 +6,15 @@
                 <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
             </Authorized>
         </AuthorizeView>
-        <AuthorizeView Roles="Admin, Technician">
-            <Authorized>
-                <MudNavLink Href="/users" Icon="@Icons.Material.Filled.Person">Users</MudNavLink>
-            </Authorized>
-        </AuthorizeView>
-        <AuthorizeView Roles="Admin, Technician, Client">
-            <Authorized>
-                <MudNavLink Href="/plant" Icon="@Icons.Material.Filled.Nature">Plants</MudNavLink>
-                <MudNavLink Href="/groups" Icon="@Icons.Material.Filled.Group">Groups</MudNavLink>
-                <MudNavLink Href="/variables" Icon="@Icons.Material.Filled.CenterFocusStrong">Variables</MudNavLink>
-            </Authorized>
-        </AuthorizeView>
         <AuthorizeView Roles="Admin">
             <Authorized>
-                <MudNavLink Href="/admin" Icon="@Icons.Material.Filled.Settings">Admin</MudNavLink>
+                <MudNavGroup Title="Admin" Icon="@Icons.Material.Filled.ManageAccounts" @bind-Expanded="_isExpanded">
+                    <MudNavLink Href="/admin" Icon="@Icons.Material.Filled.Settings">Dashboard</MudNavLink>
+                    <MudNavLink Href="/admin/users" Icon="@Icons.Material.Filled.Person">Users</MudNavLink>
+                    <MudNavLink Href="/admin/plants" Icon="@Icons.Material.Filled.Nature">Plants</MudNavLink>
+                    <MudNavLink Href="/admin/groups" Icon="@Icons.Material.Filled.GroupWork">Groups</MudNavLink>
+                    <MudNavLink Href="/admin/variables" Icon="@Icons.Material.Filled.Science">Variables</MudNavLink>
+                </MudNavGroup>
             </Authorized>
         </AuthorizeView>
     </MudNavMenu>
@@ -30,4 +24,5 @@
 {
     [Parameter]
     public bool SideBarOpen { get; set; }
+    private bool _isExpanded = true;
 }

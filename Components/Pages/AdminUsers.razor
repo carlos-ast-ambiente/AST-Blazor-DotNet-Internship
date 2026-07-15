@@ -7,57 +7,54 @@
 @attribute [Authorize(Roles = "Admin")]
 @inject UserService UserService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
 
     <BlazorApp.Components.Pages.AdminHeader />
 
     <MudPaper Elevation="6" Class="pa-8">
-        <MudText Typo="Typo.h4" Class="mb-4">Users</MudText>
 
         @if (_loading) {
             <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
         }
         else {
-            <MudTable Items="_users" Dense="true" Hover="true">
-                <HeaderContent>
-                    <MudTh>
-                        <MudText Typo="Typo.h6">Name</MudText>
-                    </MudTh>
-                    <MudTh>
-                        <MudText Typo="Typo.h6">Username</MudText>
-                    </MudTh>
-                    <MudTh>
-                        <MudText Typo="Typo.h6">Email</MudText>
-                    </MudTh>
-                    <MudTh>
-                        <MudText Typo="Typo.h6">Plants</MudText>
-                    </MudTh>
-                    <MudTh>
-                        <MudText Typo="Typo.h6">Edit</MudText>
-                    </MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Name" @onclick="() => NavigateToUser(context)">@context.Name</MudTd>
-                    <MudTd DataLabel="Username" @onclick="() => NavigateToUser(context)">@context.UserName</MudTd>
-                    <MudTd DataLabel="Email" @onclick="() => NavigateToUser(context)">@context.Email</MudTd>
-                    <MudTh DataLabel="Plants">
-                        @if (context.Plants.Any()) {
-                            @string.Join(", ", context.Plants.Select(p => p.Name));
-                        } else {
-                            <i>No plants</i>
-                        }
-                    </MudTh>
-                    <MudTd>
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => NavigateToEdit(context))" Class="rounded-pill">
-                            Edit
-                        </MudButton>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@CreateUser" Class="mt-6 rounded-pill">
-                Create a new User
-            </MudButton>
+            <MudDataGrid T="User" Items="@_users" Hover="true" RowClick="OnRowClick" QuickFilter="FilterUsers">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h4" Class="mb-4 mr-16">Users</MudText>
+                    <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mb-4 mr-16 ml-8"></MudTextField>
+                    <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+                        <MudButton StartIcon="@Icons.Material.Filled.Add" Class="rounded-pill" OnClick="@CreateUser">Create new user</MudButton>
+                    </MudButtonGroup>
+                </ToolBarContent>
+                <Columns>
+                    <PropertyColumn Property="x => x.Enabled" Title="">
+                        <CellTemplate>
+                            <MudPaper Elevation="0" Width="4px" Height="40px" Class="ma-0 d.block" Style="@($"background-color: {(context.Item.Enabled ? "green" : "red")};")" />
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Name" Title="Name" HeaderClass="large-header" />
+                    <PropertyColumn Property="x => x.UserName" Title="UserName" HeaderClass="large-header" />
+                    <PropertyColumn Property="x => x.Email" Title="Email" HeaderClass="large-header" />
+                    <TemplateColumn Title="Plants" HeaderClass="large-header">
+                        <CellTemplate>
+                            @if (!context.Item.Enabled) {
+                                <i>-------</i>
+                            } else if (context.Item.Plants.Any()) {
+                                @string.Join(",", context.Item.Plants.Where(p => p.Enabled).Select(p => p.Name))
+                            } else {
+                                <i>No plants</i>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Edit">
+                        <CellTemplate>
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => NavigateToEdit(context.Item))" />
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => ConfirmDeleteAsync(context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
         }
     </MudPaper>
 </MudContainer>
@@ -65,16 +62,29 @@
 @code {
     private List<User> _users = new();
     private bool _loading = true;
+    private string? _message;
+    private Severity _messageSeverity = Severity.Info;
+    private string _searchString;
 
     protected override async Task OnInitializedAsync() {
         await ReloadUsersAsync();
     }
+
+    private Func<User, bool> FilterUsers => user =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        return user.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase)
+            || user.UserName.Contains(_searchString, StringComparison.OrdinalIgnoreCase);
+    };
 
     private async Task ReloadUsersAsync() {
         _loading = true;
 
         _users = await UserService.GetUsersAsync();
 
+        StateHasChanged();
         _loading = false;
     }
 
@@ -88,5 +98,29 @@
 
     private void CreateUser() {
         NavigationManager.NavigateTo("/admin/users/createUser");
+    }
+
+    private async Task ConfirmDeleteAsync(User user) {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Delete {user.UserName}?");
+
+        if (!confirmed) {
+            return;
+        }
+
+        var result = await UserService.DeleteUserAsync(user);
+
+        if (result.Succeeded) {
+            _messageSeverity = Severity.Success;
+            _message = $"Deleted {user.UserName}.";
+            NavigationManager.NavigateTo("/admin/users");
+        }
+        else {
+            _messageSeverity = Severity.Error;
+            _message = string.Join(", ", result.Errors.Select(e => e.Description));
+        }
+    }
+
+    private void OnRowClick(DataGridRowClickEventArgs<User> user) {
+        NavigateToUser(user.Item);
     }
 }

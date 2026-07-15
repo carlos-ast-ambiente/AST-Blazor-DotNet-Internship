@@ -7,58 +7,64 @@
 @attribute [Authorize(Roles = "Admin")]
 @inject VariableService VariableService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
 
     <BlazorApp.Components.Pages.AdminHeader />
 
     <MudPaper Elevation="6" Class="pa-8">
-        <MudText Typo="Typo.h4" Class="mb-4">Variables</MudText>
-
+        
         @if (_loading) {
             <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
         }
         else {
-            <MudTable Items="variables" Dense="true" Hover="true">
-                <HeaderContent>
-                    <MudTh>
-                        <MudText Typo="Typo.h6">Name</MudText>
-                    </MudTh>
-                    <MudTh>
-                        <MudText Typo="Typo.h6">Groups</MudText>
-                    </MudTh>
-                    <MudTh>
-                        <MudText Typo="Typo.h6">Plants</MudText>
-                    </MudTh>
-                    <MudTh>
-                        <MudText Typo="Typo.h6">Edit</MudText>
-                    </MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Name" @onclick="() => NavigateToVariable(context)">@context.Name</MudTd>
-                    <MudTd DataLabel="Name" @onclick="() => NavigateToVariable(context)">
-                        @if (context.Group == null) { <i>No Groups</i>}
-                        else {
-                            @context.Group.Name
-                        }
-                    </MudTd>
-                    <MudTh DataLabel="Plants">
-                        @if (context.Plants != null) {
-                            @string.Join(", ", context.Plants.Select(p => p.Name));
-                        } else {
-                            <i>No plants</i>
-                        }
-                    </MudTh>
-                    <MudTd>
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => NavigateToEdit(context))" Class="rounded-pill">
-                            Edit
-                        </MudButton>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@CreateVariable" Class="mt-6 rounded-pill">
-                Create a new Variable
-            </MudButton>
+            <MudDataGrid T="Variable" Items="@variables" Hover="true" RowClick="OnRowClick" QuickFilter="FilterVariables">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h4" Class="mb-4">Variables</MudText>
+                    <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mb-4 mr-16 ml-8"></MudTextField>
+                    <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+                        <MudButton StartIcon="@Icons.Material.Filled.Add" Class="rounded-pill" OnClick="@CreateVariable">Create new variable</MudButton>
+                    </MudButtonGroup>
+                </ToolBarContent>
+                <Columns>
+                    <PropertyColumn Property="x => x.Enabled" Title="">
+                        <CellTemplate>
+                            <MudPaper Elevation="0" Width="4px" Height="40px" Class="ma-0 d.block" Style="@($"background-color: {(context.Item.Enabled ? "green" : "red")};")" />
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Name" />
+                    <PropertyColumn Property="x => x.Description" />
+                    <TemplateColumn Title="Group" HeaderClass="large-header">
+                        <CellTemplate>
+                            @if (!context.Item.Enabled) {
+                                <i>-------</i>
+                            } else if (context.Item.Group is null) {
+                                <i>No group</i>
+                            } else {
+                                @context.Item.Group.Name
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Plants" HeaderClass="large-header">
+                        <CellTemplate>
+                            @if (!context.Item.Enabled) {
+                                <i>-------</i>
+                            } else if (context.Item.Plants.Any()) {
+                                @string.Join(",", context.Item.Plants.Where(p => p.Enabled).Select(p => p.Name))
+                            } else {
+                                <i>No plants</i>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Edit">
+                        <CellTemplate>
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => NavigateToEdit(context.Item))" />
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(async () => await ConfirmDeleteAsync(context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
         }
     </MudPaper>
 </MudContainer>
@@ -67,9 +73,21 @@
     private List<Variable> variables = new();
     private bool _loading = true;
 
+    private Variable? variable;
+    private string _searchString;
+
     protected override async Task OnInitializedAsync() {
         await ReloadVariablesAsync();
     }
+
+    private Func<Variable, bool> FilterVariables => variable =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        return variable.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase)
+            || variable.Description.Contains(_searchString, StringComparison.OrdinalIgnoreCase);
+    };
 
     private async Task ReloadVariablesAsync() {
         _loading = true;
@@ -89,5 +107,25 @@
 
     private void CreateVariable() {
         NavigationManager.NavigateTo("/admin/variables/createVariable");
+    }
+
+    private async Task ConfirmDeleteAsync(Variable variable) {
+        if (variable is null) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Delete {variable.Name}?");
+        if (!confirmed) return;
+
+        try {
+            await VariableService.Delete(variable.Id);
+        
+            await ReloadVariablesAsync();
+        }
+        catch (Exception ex) {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error deleting group: {ex.Message}");
+        }
+    }
+
+    private void OnRowClick(DataGridRowClickEventArgs<Variable> variable) {
+        NavigateToVariable(variable.Item);
     }
 }

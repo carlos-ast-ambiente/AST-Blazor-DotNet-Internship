@@ -1,4 +1,4 @@
-@page "/admin/plants/createGroup"
+@page "/admin/groups/createGroup"
 @using BlazorApp.Models
 @using System.ComponentModel.DataAnnotations
 @using BlazorApp.Services
@@ -29,12 +29,12 @@
                 <MudSelectItem T="bool" Value="false">False</MudSelectItem>
             </MudSelect>
             <MudItem xs="12" md="6">
-                    <MudSelect T="int" Label="Assign variables" Variant="Variant.Outlined" MultiSelection="true" SelectedValues="selectedVariablesIds" SelectedValuesChanged="@(values => selectedVariablesIds = values.ToHashSet())" ToStringFunc="@(id => Variables.FirstOrDefault(v => v.Id == id)?.Name ?? "")" Class="mb-4">
-                        @foreach (var variable in Variables) {
-                            <MudSelectItem T="int" Value="@variable.Id">
-                                @variable.Name
-                            </MudSelectItem>
-                        }
+                <MudSelect T="int" Label="Assign variables" Variant="Variant.Outlined" MultiSelection="true" SelectedValues="selectedVariablesIds" SelectedValuesChanged="@(values => selectedVariablesIds = values.ToHashSet())" ToStringFunc="@(id => Variables.FirstOrDefault(v => v.Id == id)?.Name ?? "")" Class="mb-4">
+                    @foreach (var variable in Variables.Where(v => v.Enabled)) {
+                        <MudSelectItem T="int" Value="@variable.Id">
+                            @variable.Name
+                        </MudSelectItem>
+                    }
                 </MudSelect>
             </MudItem>
 
@@ -53,7 +53,7 @@
     
     protected override async Task OnInitializedAsync()
     {
-        Variables = await VariableService.GetVariablesAsync(); //variables, add method to variable service
+        Variables = await VariableService.GetAllEnabled(true); //variables, add method to variable service
     }
 
     private async Task OnValidSubmit() {

@@ -27,7 +27,7 @@
             <MudGrid>
                 <MudItem xs="12" md="6">
                     <MudSelect T="int" MultiSelection="true" SelectedValues="selectedPlantsIds" SelectedValuesChanged="@(values => selectedPlantsIds = values.ToHashSet())" ToStringFunc="@(id => Plants.FirstOrDefault(p => p.Id == id)?.Name ?? "")" Class="mb-4" Label="Assign plants" Variant="Variant.Outlined">
-                        @foreach (var plant in Plants) {
+                        @foreach (var plant in Plants.Where(p => p.Enabled)) {
                             <MudSelectItem T="int" Value="@plant.Id">
                                 @plant.Name
                             </MudSelectItem>
@@ -36,7 +36,7 @@
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <MudSelect T="int?" @bind-value="selectedGroupId" Class="mb-4" Label="Assign groups" Variant="Variant.Outlined">
-                        @foreach (var group in Groups) {
+                        @foreach (var group in Groups.Where(g => g.Enabled)) {
                             <MudSelectItem T="int?" Value="@group.Id">
                                 @group.Name
                             </MudSelectItem>
@@ -66,8 +66,8 @@
     private int? selectedGroupId;
 
     protected override async Task OnInitializedAsync() {
-        Plants = await PlantService.GetAllPlants();
-        Groups = await GroupService.GetAllGroups();
+        Plants = await PlantService.GetAllEnabled(true);
+        Groups = await GroupService.GetAllEnabled(true);
     }
 
     private async Task OnValidSubmit() {
@@ -78,11 +78,18 @@
             Description = _model.Description,
             DateCreated = DateTime.UtcNow,
             DateUpdated = DateTime.UtcNow,
-            Enabled = _model.Enabled
+            Enabled = _model.Enabled,
+            GroupId = selectedGroupId
         };
 
-        await VariableService.Insert(variable);
-        NavigationManager.NavigateTo("/admin/variables");
+        variable.Plants = Plants.Where(p => selectedPlantsIds.Contains(p.Id)).ToList();
+
+        try {
+            await VariableService.Insert(variable);
+            NavigationManager.NavigateTo("/admin/variables");
+        } catch (Exception e) {
+            _errorMessage = e.Message;
+        }
     }
 
     public class VariableModel {

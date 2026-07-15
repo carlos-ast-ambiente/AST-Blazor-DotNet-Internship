@@ -14,12 +14,12 @@ namespace BlazorApp.Services
         }
 
         public async Task<List<Group>> GetAllGroups() {
-            return await _context.Set<Group>().Include(g => g.Variables)
+            return await _context.Set<Group>().Include(g => g.Variables.Where(v => v.Enabled))
             .ToListAsync();
         }
 
         public async Task<Group?> GetGroupAsync(int id) {
-            return await _context.Groups.FirstOrDefaultAsync(g => g.Id == id);
+            return await _context.Groups.Include(g => g.Variables.Where(v => v.Enabled)).FirstOrDefaultAsync(g => g.Id == id);
         }
     }
 }

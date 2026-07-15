@@ -39,7 +39,7 @@
                 <div class="d-flex flex-nowrap justify-end gap-1 mt-auto ms-auto mb-2 me-3"
                     style="width: 90%; max-width: 100%; overflow-x: auto; white-space: nowrap; scrollbar-width: none;">
 
-                    @foreach (var user in plant.Users)
+                    @foreach (var user in plant.Users.Where(u => u.Enabled))
                     {
                         <MudChip T="string"
                                 Size="Size.Medium"
@@ -53,7 +53,7 @@
                 <div class="d-flex flex-nowrap justify-end gap-1 ms-auto mb-3 me-3"
                     style="width: 90%; max-width: 100%; overflow-x: auto; white-space: nowrap; scrollbar-width: none;">
 
-                    @foreach (var variable in plant.Variables)
+                    @foreach (var variable in plant.Variables.Where(v => v.Enabled))
                     {
                         <MudChip T="string"
                                 Size="Size.Medium"
@@ -95,6 +95,6 @@
         }
 
         await PlantService.Delete(plant.Id);
-        NavigationManager.NavigateTo("/admin/plants");
+        NavigationManager.NavigateTo("/admin/plants", true);
     }
 }

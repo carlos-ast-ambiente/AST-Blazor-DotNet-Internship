@@ -31,7 +31,7 @@
             </MudSelect>
             <MudItem xs="12" md="6">
                     <MudSelect T="int" Label="Assign users" Variant="Variant.Outlined" MultiSelection="true" SelectedValues="selectedUsersIds" SelectedValuesChanged="@(values => selectedUsersIds = values.ToHashSet())" ToStringFunc="@(id => Users.FirstOrDefault(u => u.Id == id)?.Name ?? "")" Class="mb-4">
-                        @foreach (var user in Users) {
+                        @foreach (var user in Users.Where(u => u.Enabled)) {
                             <MudSelectItem T="int" Value="@user.Id">
                                 @user.UserName
                             </MudSelectItem>
@@ -40,7 +40,7 @@
             </MudItem>
             <MudItem xs="12" md="6">
                     <MudSelect T="int" Label="Assign variables" Variant="Variant.Outlined" MultiSelection="true" SelectedValues="selectedVariablesIds" SelectedValuesChanged="@(values => selectedVariablesIds = values.ToHashSet())" ToStringFunc="@(id => Variables.FirstOrDefault(v => v.Id == id)?.Name ?? "")" Class="mb-4">
-                        @foreach (var variable in Variables) {
+                        @foreach (var variable in Variables.Where(v => v.Enabled)) {
                             <MudSelectItem T="int" Value="@variable.Id">
                                 @variable.Name
                             </MudSelectItem>
@@ -67,8 +67,8 @@
     
     protected override async Task OnInitializedAsync()
     {
-        Users = await UserService.GetUsersAsync();
-        Variables = await VariableService.GetVariablesAsync();
+        Users = await UserService.GetAllEnabled(true);
+        Variables = await VariableService.GetAllEnabled(true);
     }
 
     private async Task OnValidSubmit() {
@@ -81,7 +81,8 @@
             DateCreated = DateTime.UtcNow,
             DateUpdated = DateTime.UtcNow,
             Enabled = _model.Enabled,
-            Users = Users.Where(u => selectedUsersIds.Contains(u.Id)).ToList()
+            Users = Users.Where(u => selectedUsersIds.Contains(u.Id)).ToList(),
+            Variables = Variables.Where(v => selectedVariablesIds.Contains(v.Id)).ToList()
         };
 
         await PlantService.Insert(plant);

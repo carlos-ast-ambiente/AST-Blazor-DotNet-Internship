@@ -37,7 +37,7 @@
                 </MudButton>
 
                 <div class="d-flex flex-nowrap justify-end gap-1 mt-auto ms-auto mb-3 me-3" style="width: 90%; max-width: 100%; overflow-x: auto; overflow-y: auto; white-space: nowrap; ms-overflow-style: none; scrollbar-width: none;">
-                    @foreach (var plant in user.Plants)
+                    @foreach (var plant in user.Plants.Where(p => p.Enabled))
                     {
                         <MudChip T="string" Size="Size.Medium" Color="Color.Secondary" Href="@($"/admin/plants")">
                             @plant.Name

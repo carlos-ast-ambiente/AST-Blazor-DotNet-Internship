@@ -28,7 +28,7 @@
                     <MudItem xs="12" md="6">
                         <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Assign plants</b></MudText>
                         <MudSelect T="int" MultiSelection="true" SelectedValues="selectedPlantsIds" SelectedValuesChanged="@(values => selectedPlantsIds = values.ToHashSet())" ToStringFunc="@(id => Plants.FirstOrDefault(p => p.Id == id)?.Name ?? "")" Class="mb-4">
-                            @foreach (var plant in Plants) {
+                            @foreach (var plant in Plants.Where(p => p.Enabled)) {
                                 <MudSelectItem T="int" Value="@plant.Id">
                                     @plant.Name
                                 </MudSelectItem>
@@ -38,7 +38,7 @@
                     <MudItem xs="12" md="6">
                         <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Assign groups</b></MudText>
                         <MudSelect T="int?" @bind-value="selectedGroupId" Class="mb-4">
-                            @foreach (var group in Groups) {
+                            @foreach (var group in Groups.Where(g => g.Enabled)) {
                                 <MudSelectItem T="int?" Value="@group.Id">
                                     @group.Name
                                 </MudSelectItem>
@@ -93,10 +93,10 @@
         variable.Plants = Plants.Where(p => selectedPlantsIds.Contains(p.Id)).ToList();
         variable.GroupId = selectedGroupId ?? 0;
         await VariableService.Update(variable);
-        NavigationManager.NavigateTo($"/admin/variables/{Id}");
+        NavigationManager.NavigateTo($"/admin/variables");
     }
 
     private void Cancel(){
-        NavigationManager.NavigateTo($"/admin/variables/{Id}");
+        NavigationManager.NavigateTo($"/admin/variables");
     }
 }

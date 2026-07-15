@@ -61,12 +61,17 @@
                         <MudItem xs="12" md="6">
                             <MudText Typo="Typo.h6">Assign plants</MudText>
                             <MudSelect T="int" MultiSelection="true" SelectedValues="selectedPlantsIds" SelectedValuesChanged="@(values => selectedPlantsIds = values.ToHashSet())" ToStringFunc="@(id => Plants.FirstOrDefault(p => p.Id == id)?.Name ?? "")" Class="mb-4">
-                                @foreach (var plant in Plants) {
+                                @foreach (var plant in Plants.Where(p => p.Enabled)) {
                                     <MudSelectItem T="int" Value="@plant.Id">
                                         @plant.Name
                                     </MudSelectItem>
                                 }
                             </MudSelect>
+                        </MudItem>
+
+                        <MudItem xs="12" md="6">
+                            <MudText Typo="Typo.h6">Enabled</MudText>
+                            <MudSwitch @bind-Value="user.Enabled" Class="mb-4" />
                         </MudItem>
 
                     </MudGrid>
@@ -122,6 +127,8 @@
         Plants = await PlantService.GetAllPlants();
 
         _selectedRole = await UserService.GetUserRoleAsync(user);
+
+        selectedPlantsIds = user.Plants.Where(p => p.Enabled).Select(p => p.Id).ToHashSet();
     }
 
     private async Task SaveUserAsync() {
@@ -136,7 +143,7 @@
             return;
         }
 
-        var result = await UserService.UpdateUserAsync(user, _selectedRole);
+        var result = await UserService.UpdateUserWithPlantsAsync(user, _selectedRole, selectedPlantsIds);
 
         if(!result.Succeeded) {
             _messageSeverity = Severity.Error;
@@ -162,7 +169,7 @@
         if (result.Succeeded) {
             _messageSeverity = Severity.Success;
             _message = $"Deleted {user.UserName}.";
-            NavigationManager.NavigateTo("/admin/users");
+            NavigationManager.NavigateTo("/admin/users", true);
         }
         else {
             _messageSeverity = Severity.Error;

@@ -27,7 +27,7 @@
                     <MudItem xs="12" md="6">
                         <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Assign variables</b></MudText>
                         <MudSelect T="int" MultiSelection="true" SelectedValues="selectedVariablesIds" SelectedValuesChanged="@(values => selectedVariablesIds = values.ToHashSet())" ToStringFunc="@(id => Variables.FirstOrDefault(v => v.Id == id)?.Name ?? "")" Class="mb-4">
-                            @foreach (var variable in Variables) {
+                            @foreach (var variable in Variables.Where(v => v.Enabled)) {
                                 <MudSelectItem T="int" Value="@variable.Id">
                                     @variable.Name
                                 </MudSelectItem>
@@ -77,10 +77,10 @@
         group.DateUpdated = DateTime.UtcNow;
         group.Variables = Variables.Where(v => selectedVariablesIds.Contains(v.Id)).ToList();
         await GroupService.Update(group);
-        NavigationManager.NavigateTo($"/admin/groups/{Id}");
+        NavigationManager.NavigateTo($"/admin/groups");
     }
 
     private void Cancel(){
-        NavigationManager.NavigateTo($"/admin/groups/{Id}");
+        NavigationManager.NavigateTo($"/admin/groups");
     }
 }

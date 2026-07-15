@@ -39,11 +39,18 @@
 
             <MudItem xs="12" md="6">
                 <MudSelect T="int" MultiSelection="true" SelectedValues="selectedPlantsIds" SelectedValuesChanged="@(values => selectedPlantsIds = values.ToHashSet())" ToStringFunc="@(id => Plants.FirstOrDefault(p => p.Id == id)?.Name ?? "")" Class="mb-4" Variant="Variant.Outlined" Label="Assign plants">
-                    @foreach (var plant in Plants) {
+                    @foreach (var plant in Plants.Where(p => p.Enabled)) {
                         <MudSelectItem T="int" Value="@plant.Id">
                             @plant.Name
                         </MudSelectItem>
                     }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudSelect T="bool" Label="Enabled" @bind-Value="_model.Enabled" Variant="Variant.Outlined" Class="mb-4">
+                    <MudSelectItem T="bool" Value="true">True</MudSelectItem>
+                    <MudSelectItem T="bool" Value="false">False</MudSelectItem>
                 </MudSelect>
             </MudItem>
 
@@ -66,7 +73,9 @@
 
         _selectedRole = _allRoles.FirstOrDefault();
 
-        Plants = await PlantService.GetAllPlants();
+        Plants = await PlantService.GetAllEnabled(true);
+
+        selectedPlantsIds = new HashSet<int>();
     }
 
     private async Task OnValidSubmit() {
@@ -82,7 +91,9 @@
             _model.Username,
             _model.Email,
             _model.Password,
-            _selectedRole
+            _model.Enabled,
+            _selectedRole,
+            selectedPlantsIds
         );
 
         if (result.Succeeded) {
@@ -97,6 +108,7 @@
         [Required] public string Username { get; set; } = "";
         [Required, EmailAddress] public string Email { get; set; } = "";
         [Required, MinLength(6)] public string Password { get; set; } = "";
+        [Required] public bool Enabled {get; set;} = true;
         [Compare(nameof(Password))] public string ConfirmPassword { get; set; } = "";
 
     }

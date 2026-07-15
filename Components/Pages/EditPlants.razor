@@ -32,7 +32,7 @@
                     <MudItem xs="12" md="6">
                         <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Assign users</b></MudText>
                         <MudSelect T="int" MultiSelection="true" SelectedValues="selectedUsersIds" SelectedValuesChanged="@(values => selectedUsersIds = values.ToHashSet())" ToStringFunc="@(id => Users.FirstOrDefault(u => u.Id == id)?.UserName ?? "")" Class="mb-4">
-                            @foreach (var user in Users) {
+                            @foreach (var user in Users.Where(u => u.Enabled)) {
                                 <MudSelectItem T="int" Value="@user.Id">
                                     @user.UserName
                                 </MudSelectItem>
@@ -42,7 +42,7 @@
                     <MudItem xs="12" md="6">
                         <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Assign variables</b></MudText>
                         <MudSelect T="int" MultiSelection="true" SelectedValues="selectedVariablesIds" SelectedValuesChanged="@(values => selectedVariablesIds = values.ToHashSet())" ToStringFunc="@(id => Variables.FirstOrDefault(v => v.Id == id)?.Name ?? "")" Class="mb-4">
-                            @foreach (var variable in Variables) {
+                            @foreach (var variable in Variables.Where(v => v.Enabled)) {
                                 <MudSelectItem T="int" Value="@variable.Id">
                                     @variable.Name
                                 </MudSelectItem>
@@ -99,10 +99,10 @@
         plant.Users = Users.Where(u => selectedUsersIds.Contains(u.Id)).ToList();
         plant.Variables = Variables.Where(v => selectedVariablesIds.Contains(v.Id)).ToList();
         await PlantService.Update(plant);
-        NavigationManager.NavigateTo($"/admin/plant/{Uri.EscapeDataString(plant.Name)}");
+        NavigationManager.NavigateTo($"/admin/plants");
     }
 
     private void Cancel(){
-        NavigationManager.NavigateTo($"/admin/plant/{Uri.EscapeDataString(originalName!)}");
+        NavigationManager.NavigateTo($"/admin/plants");
     }
 }
