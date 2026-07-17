@@ -3,6 +3,7 @@ using System;
 using BlazorApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BlazorApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260625140253_AddDescriptionToPlant")]
+    partial class AddDescriptionToPlant
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,10 +38,6 @@ namespace BlazorApp.Migrations
 
                     b.Property<DateTime>("DateUpdated")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<bool>("Enabled")
                         .HasColumnType("boolean");
@@ -117,9 +116,6 @@ namespace BlazorApp.Migrations
                     b.Property<bool>("Enabled")
                         .HasColumnType("boolean");
 
-                    b.Property<int?>("GroupId")
-                        .HasColumnType("integer");
-
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
 
@@ -159,8 +155,6 @@ namespace BlazorApp.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("GroupId");
-
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
 
@@ -188,13 +182,10 @@ namespace BlazorApp.Migrations
                     b.Property<DateTime>("DateUpdated")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
                     b.Property<bool>("Enabled")
                         .HasColumnType("boolean");
 
-                    b.Property<int?>("GroupId")
+                    b.Property<int>("GroupId")
                         .HasColumnType("integer");
 
                     b.Property<int>("Max")
@@ -381,18 +372,13 @@ namespace BlazorApp.Migrations
                     b.ToTable("PlantVariable");
                 });
 
-            modelBuilder.Entity("BlazorApp.Models.User", b =>
-                {
-                    b.HasOne("BlazorApp.Models.Group", null)
-                        .WithMany("Users")
-                        .HasForeignKey("GroupId");
-                });
-
             modelBuilder.Entity("BlazorApp.Models.Variable", b =>
                 {
                     b.HasOne("BlazorApp.Models.Group", "Group")
                         .WithMany("Variables")
-                        .HasForeignKey("GroupId");
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Group");
                 });
@@ -480,8 +466,6 @@ namespace BlazorApp.Migrations
 
             modelBuilder.Entity("BlazorApp.Models.Group", b =>
                 {
-                    b.Navigation("Users");
-
                     b.Navigation("Variables");
                 });
 #pragma warning restore 612, 618

@@ -1,0 +1,108 @@
+@page "/admin/plant/{Name}/editPlant"
+@using Microsoft.AspNetCore.Authorization
+@using BlazorApp.Models
+@using BlazorApp.Services
+@attribute [Authorize(Roles = "Admin")]
+@inject PlantService PlantService
+@inject UserService UserService
+@inject VariableService VariableService
+@inject NavigationManager NavigationManager
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+    @if (plant == null) {
+        <MudProgressCircular Indeterminate="true" />
+    } else {
+        <MudPaper Elevation="4" Class="pa-8" Style="position: relative">
+            <EditForm Model="plant" OnValidSubmit="SavePlant">
+                <DataAnnotationsValidator />
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Name</b></MudText>
+                        <MudTextField @bind-Value="plant.Name" Class="mb-4" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Description</b></MudText>
+                        <MudTextField @bind-Value="plant.Description" Class="mb-4" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Database</b></MudText>
+                        <MudTextField @bind-Value="plant.Database" Class="mb-4" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Assign users</b></MudText>
+                        <MudSelect T="int" MultiSelection="true" SelectedValues="selectedUsersIds" SelectedValuesChanged="@(values => selectedUsersIds = values.ToHashSet())" ToStringFunc="@(id => Users.FirstOrDefault(u => u.Id == id)?.UserName ?? "")" Class="mb-4">
+                            @foreach (var user in Users.Where(u => u.Enabled)) {
+                                <MudSelectItem T="int" Value="@user.Id">
+                                    @user.UserName
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Assign variables</b></MudText>
+                        <MudSelect T="int" MultiSelection="true" SelectedValues="selectedVariablesIds" SelectedValuesChanged="@(values => selectedVariablesIds = values.ToHashSet())" ToStringFunc="@(id => Variables.FirstOrDefault(v => v.Id == id)?.Name ?? "")" Class="mb-4">
+                            @foreach (var variable in Variables.Where(v => v.Enabled)) {
+                                <MudSelectItem T="int" Value="@variable.Id">
+                                    @variable.Name
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+
+                <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Enabled</b></MudText>
+                <MudSwitch @bind-Value="plant.Enabled" Class="mb-4" />
+
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mr-4 mt-4 rounded-pill">
+                    Save
+                </MudButton>
+                <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Error" Class="mt-4 rounded-pill">
+                    Cancel
+                </MudButton>
+            </EditForm>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public string Name {get; set;} = string.Empty;
+
+    private Plant? plant;
+    private string? originalName;
+
+    private List<User> Users = [];
+    private HashSet<int> selectedUsersIds = [];
+    private List<Variable> Variables = [];
+    private HashSet<int> selectedVariablesIds = [];
+
+    protected override async Task OnInitializedAsync() {
+        originalName = Uri.UnescapeDataString(Name);
+        plant = await PlantService.GetPlantByNameAsync(originalName);
+
+        Users = await UserService.GetUsersAsync();
+        Variables = await VariableService.GetVariablesAsync();
+
+        if (plant != null) {
+            selectedUsersIds = plant.Users.Select(u => u.Id).ToHashSet();
+            selectedVariablesIds = plant.Variables.Select(v => v.Id).ToHashSet();
+        }
+    }
+
+    private async Task SavePlant(){
+        if (plant is null) {
+            return;
+        }
+
+        plant.DateUpdated = DateTime.UtcNow;
+        plant.Users = Users.Where(u => selectedUsersIds.Contains(u.Id)).ToList();
+        plant.Variables = Variables.Where(v => selectedVariablesIds.Contains(v.Id)).ToList();
+        await PlantService.Update(plant);
+        NavigationManager.NavigateTo($"/admin/plants");
+    }
+
+    private void Cancel(){
+        NavigationManager.NavigateTo($"/admin/plants");
+    }
+}

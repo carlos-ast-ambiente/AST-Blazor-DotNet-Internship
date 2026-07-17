@@ -1,0 +1,82 @@
+@page "/admin/groups/createGroup"
+@using BlazorApp.Models
+@using System.ComponentModel.DataAnnotations
+@using BlazorApp.Services
+@using Microsoft.AspNetCore.Authorization
+@inject GroupService GroupService
+@inject VariableService VariableService
+@inject UserService UserService
+@inject NavigationManager NavigationManager
+@attribute [Authorize(Roles = "Admin")]
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+    <MudPaper Elevation="4" Class="pa-8">
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true" Class="mt-8">Create a Group</MudText>
+
+        @if (!string.IsNullOrEmpty(_errorMessage)) {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
+        } 
+
+        <EditForm Model="@_model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+
+            <MudTextField Label="Name" @bind-Value="_model.Name" For="@(() => _model.Name)" Variant="Variant.Outlined" Class="mb-4" />
+
+            <MudTextField Label="Description" @bind-Value="_model.Description" For="@(() => _model.Description)" Variant="Variant.Outlined" Class="mb-4" />
+            
+            <MudSelect T="bool" Label="Enabled" @bind-Value="_model.Enabled" Variant="Variant.Outlined" Class="mb-4">
+                <MudSelectItem T="bool" Value="true">True</MudSelectItem>
+                <MudSelectItem T="bool" Value="false">False</MudSelectItem>
+            </MudSelect>
+            <MudItem xs="12" md="6">
+                <MudSelect T="int" Label="Assign variables" Variant="Variant.Outlined" MultiSelection="true" SelectedValues="selectedVariablesIds" SelectedValuesChanged="@(values => selectedVariablesIds = values.ToHashSet())" ToStringFunc="@(id => Variables.FirstOrDefault(v => v.Id == id)?.Name ?? "")" Class="mb-4">
+                    @foreach (var variable in Variables.Where(v => v.Enabled)) {
+                        <MudSelectItem T="int" Value="@variable.Id">
+                            @variable.Name
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4 rounded-pill">Create</MudButton>
+        </EditForm>
+    </MudPaper>    
+</MudContainer>
+
+@code {
+    private GroupModel _model = new();
+    private string? _errorMessage;
+
+    private List<Variable> Variables = [];
+    private HashSet<int> selectedVariablesIds = [];
+
+    
+    protected override async Task OnInitializedAsync()
+    {
+        Variables = await VariableService.GetAllEnabled(true); //variables, add method to variable service
+    }
+
+    private async Task OnValidSubmit() {
+        _errorMessage = null;
+
+        var group = new Group {
+            Name = _model.Name,
+            Description = _model.Description,
+            DateCreated = DateTime.UtcNow,
+            DateUpdated = DateTime.UtcNow,
+            Enabled = _model.Enabled,
+            Variables = Variables.Where(v => selectedVariablesIds.Contains(v.Id)).ToList()  //variables
+        };
+
+        await GroupService.Insert(group);
+        NavigationManager.NavigateTo("/admin/groups");
+    }
+
+    public class GroupModel {
+        [Required] public int Id { get; set; }
+        [Required] public string Name { get; set; } = "";
+
+        [Required] public string Description {get; set;} = "";
+        [Required] public bool Enabled { get; set; } = false;
+    }
+}

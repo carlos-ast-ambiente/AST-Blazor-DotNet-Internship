@@ -1,0 +1,115 @@
+@page "/admin/users/createUser"
+@using BlazorApp.Models
+@using BlazorApp.Services
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject NavigationManager NavigationManager
+@attribute [Authorize(Roles = "Admin")]
+@inject UserService UserService
+@inject PlantService PlantService
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+    <MudPaper Elevation="4" Class="pa-8">
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true" Class="mt-8">Create a new User</MudText>
+
+        @if (!string.IsNullOrEmpty(_errorMessage)) {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
+        } 
+
+        <EditForm Model="@_model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+
+            <MudTextField Label="Name" @bind-Value="_model.Name" For="@(() => _model.Name)" Variant="Variant.Outlined" Class="mb-4" />
+
+            <MudTextField Label="Username" @bind-Value="_model.Username" For="@(() => _model.Username)" Variant="Variant.Outlined" Class="mb-4" />
+            <MudTextField Label="Email" @bind-Value="_model.Email" For="@(() => _model.Email)" Variant="Variant.Outlined" Class="mb-4" />
+
+            <MudTextField Label="Password" @bind-Value="_model.Password" For="@(() => _model.Password)" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4" />
+
+            <MudTextField Label="Confirm Password" @bind-Value="_model.ConfirmPassword" For="@(() => _model.ConfirmPassword)" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4" />
+
+            <MudSelect T="string" Label="Role" @bind-Value="_selectedRole" Variant="Variant.Outlined">
+                @foreach (var role in _allRoles)
+                {
+                    <MudSelectItem Value="@role">@role</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudItem xs="12" md="6">
+                <MudSelect T="int" MultiSelection="true" SelectedValues="selectedPlantsIds" SelectedValuesChanged="@(values => selectedPlantsIds = values.ToHashSet())" ToStringFunc="@(id => Plants.FirstOrDefault(p => p.Id == id)?.Name ?? "")" Class="mb-4" Variant="Variant.Outlined" Label="Assign plants">
+                    @foreach (var plant in Plants.Where(p => p.Enabled)) {
+                        <MudSelectItem T="int" Value="@plant.Id">
+                            @plant.Name
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudSelect T="bool" Label="Enabled" @bind-Value="_model.Enabled" Variant="Variant.Outlined" Class="mb-4">
+                    <MudSelectItem T="bool" Value="true">True</MudSelectItem>
+                    <MudSelectItem T="bool" Value="false">False</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4 rounded-pill">Create</MudButton>
+        </EditForm>
+    </MudPaper>    
+</MudContainer>
+
+@code {
+    private UserModel _model = new();
+    private string? _errorMessage;
+    private string? _selectedRole;
+    private List<string> _allRoles = [];
+
+    private List<Plant> Plants = [];
+    private HashSet<int> selectedPlantsIds = [];
+
+    protected override async Task OnInitializedAsync() {
+        _allRoles = await UserService.GetAllRolesAsync();
+
+        _selectedRole = _allRoles.FirstOrDefault();
+
+        Plants = await PlantService.GetAllEnabled(true);
+
+        selectedPlantsIds = new HashSet<int>();
+    }
+
+    private async Task OnValidSubmit() {
+        _errorMessage = null;
+
+        if (string.IsNullOrEmpty(_selectedRole)) {
+            _errorMessage = "Please select a role.";
+            return;
+        }
+
+        var result = await UserService.CreateUserAsync(
+            _model.Name,
+            _model.Username,
+            _model.Email,
+            _model.Password,
+            _model.Enabled,
+            _selectedRole,
+            selectedPlantsIds
+        );
+
+        if (result.Succeeded) {
+            NavigationManager.NavigateTo("/admin/users");
+        } else {
+            _errorMessage = string.Join(", ", result.Errors.Select(e => e.Description));
+        }
+    }
+
+    public class UserModel {
+        [Required] public string Name { get; set; } = "";
+        [Required] public string Username { get; set; } = "";
+        [Required, EmailAddress] public string Email { get; set; } = "";
+        [Required, MinLength(6)] public string Password { get; set; } = "";
+        [Required] public bool Enabled {get; set;} = true;
+        [Compare(nameof(Password))] public string ConfirmPassword { get; set; } = "";
+
+    }
+}

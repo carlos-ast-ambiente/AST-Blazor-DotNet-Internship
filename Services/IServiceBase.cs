@@ -29,6 +29,11 @@ namespace BlazorApp.Services
             .Where(x => x.Enabled == enabled)
             .ToListAsync();
         }
+
+        public async Task<List<T>> GetAll() {
+            return await _context.Set<T>().ToListAsync();
+        }
+
         public async Task<T> GetById(bool Enabled, int Id) {
             var dev = await _context.Set<T>().FirstOrDefaultAsync(y=> y.Enabled == true && y.Id == Id);
             return dev;

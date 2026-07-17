@@ -18,12 +18,16 @@ namespace BlazorApp.Services
         }
 
         public async Task<Plant?> GetPlantByNameAsync(string name) {
-            return await _context.Plants.FirstOrDefaultAsync(p => p.Name.ToLower() == name.ToLower());
+            return await _context.Plants.Include(p => p.Users).Include(p => p.Variables).FirstOrDefaultAsync(p => p.Name.ToLower() == name.ToLower());
         }
 
         public async Task<List<Plant>> GetAllPlants() {
-            return await _context.Set<Plant>()
-            .ToListAsync();
+            return await _context.Set<Plant>().Include(p => p.Users).Include(p => p.Variables).ToListAsync();
+        }
+
+        public async Task<List<Plant>> GetEnabledPlantsAsync()
+        {
+            return await _context.Plants.Where(p => p.Enabled).Include(p => p.Users).Include(p => p.Variables).ToListAsync();
         }
     }
 }

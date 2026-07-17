@@ -1,0 +1,86 @@
+@page "/admin/groups/{Id:int}/editGroups"
+@using Microsoft.AspNetCore.Authorization
+@using BlazorApp.Models
+@using BlazorApp.Services
+@attribute [Authorize(Roles = "Admin")]
+@inject GroupService GroupService
+@inject VariableService VariableService
+@inject NavigationManager NavigationManager
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+    @if (group == null) {
+        <MudProgressCircular Indeterminate="true" />
+    } else {
+        <MudPaper Elevation="4" Class="pa-8" Style="position: relative">
+            <EditForm Model="group" OnValidSubmit="SaveGroup">
+                <DataAnnotationsValidator />
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Name</b></MudText>
+                        <MudTextField @bind-Value="group.Name" Class="mb-4" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Description</b></MudText>
+                        <MudTextField @bind-Value="group.Description" Class="mb-4" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Assign variables</b></MudText>
+                        <MudSelect T="int" MultiSelection="true" SelectedValues="selectedVariablesIds" SelectedValuesChanged="@(values => selectedVariablesIds = values.ToHashSet())" ToStringFunc="@(id => Variables.FirstOrDefault(v => v.Id == id)?.Name ?? "")" Class="mb-4">
+                            @foreach (var variable in Variables.Where(v => v.Enabled)) {
+                                <MudSelectItem T="int" Value="@variable.Id">
+                                    @variable.Name
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+
+                <MudText Typo="Typo.h6" Class="mb-1" Color="Color.Secondary"><b>Enabled</b></MudText>
+                <MudSwitch @bind-Value="group.Enabled" Class="mb-4" />
+
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mr-4 mt-4 rounded-pill">
+                    Save
+                </MudButton>
+                <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Error" Class="mt-4 rounded-pill">
+                    Cancel
+                </MudButton>
+            </EditForm>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int Id {get; set;}
+
+    private Group? group;
+
+    private List<Variable> Variables = [];
+    private HashSet<int> selectedVariablesIds = [];
+
+    protected override async Task OnInitializedAsync() {
+        group = await GroupService.GetGroupAsync(Id);
+
+        Variables = await VariableService.GetVariablesAsync();
+
+        if (group != null) {
+            selectedVariablesIds = group.Variables.Select(v => v.Id).ToHashSet();
+        }
+    }
+
+    private async Task SaveGroup(){
+        if (group is null) {
+            return;
+        }
+
+        group.DateUpdated = DateTime.UtcNow;
+        group.Variables = Variables.Where(v => selectedVariablesIds.Contains(v.Id)).ToList();
+        await GroupService.Update(group);
+        NavigationManager.NavigateTo($"/admin/groups");
+    }
+
+    private void Cancel(){
+        NavigationManager.NavigateTo($"/admin/groups");
+    }
+}

@@ -1,0 +1,126 @@
+@page "/admin/users"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using BlazorApp.Models
+@using BlazorApp.Services
+@attribute [Authorize(Roles = "Admin")]
+@inject UserService UserService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+
+    <BlazorApp.Components.Pages.AdminHeader />
+
+    <MudPaper Elevation="6" Class="pa-8">
+
+        @if (_loading) {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        }
+        else {
+            <MudDataGrid T="User" Items="@_users" Hover="true" RowClick="OnRowClick" QuickFilter="FilterUsers">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h4" Class="mb-4 mr-16">Users</MudText>
+                    <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mb-4 mr-16 ml-8"></MudTextField>
+                    <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+                        <MudButton StartIcon="@Icons.Material.Filled.Add" Class="rounded-pill" OnClick="@CreateUser">Create new user</MudButton>
+                    </MudButtonGroup>
+                </ToolBarContent>
+                <Columns>
+                    <PropertyColumn Property="x => x.Enabled" Title="">
+                        <CellTemplate>
+                            <MudPaper Elevation="0" Width="4px" Height="40px" Class="ma-0 d.block" Style="@($"background-color: {(context.Item.Enabled ? "green" : "red")};")" />
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Name" Title="Name" HeaderClass="large-header" />
+                    <PropertyColumn Property="x => x.UserName" Title="UserName" HeaderClass="large-header" />
+                    <PropertyColumn Property="x => x.Email" Title="Email" HeaderClass="large-header" />
+                    <TemplateColumn Title="Plants" HeaderClass="large-header">
+                        <CellTemplate>
+                            @if (!context.Item.Enabled) {
+                                <i>-------</i>
+                            } else if (context.Item.Plants.Any()) {
+                                @string.Join(",", context.Item.Plants.Where(p => p.Enabled).Select(p => p.Name))
+                            } else {
+                                <i>No plants</i>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Edit">
+                        <CellTemplate>
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => NavigateToEdit(context.Item))" />
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => ConfirmDeleteAsync(context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<User> _users = new();
+    private bool _loading = true;
+    private string? _message;
+    private Severity _messageSeverity = Severity.Info;
+    private string _searchString;
+
+    protected override async Task OnInitializedAsync() {
+        await ReloadUsersAsync();
+    }
+
+    private Func<User, bool> FilterUsers => user =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        return user.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase)
+            || user.UserName.Contains(_searchString, StringComparison.OrdinalIgnoreCase);
+    };
+
+    private async Task ReloadUsersAsync() {
+        _loading = true;
+
+        _users = await UserService.GetUsersAsync();
+
+        StateHasChanged();
+        _loading = false;
+    }
+
+    private void NavigateToEdit(User user) {
+        NavigationManager.NavigateTo($"/admin/users/{user.Id}/editUsers");
+    }
+
+    private void NavigateToUser(User user) {
+        NavigationManager.NavigateTo($"/admin/users/{user.Id}");
+    }
+
+    private void CreateUser() {
+        NavigationManager.NavigateTo("/admin/users/createUser");
+    }
+
+    private async Task ConfirmDeleteAsync(User user) {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Delete {user.UserName}?");
+
+        if (!confirmed) {
+            return;
+        }
+
+        var result = await UserService.DeleteUserAsync(user);
+
+        if (result.Succeeded) {
+            _messageSeverity = Severity.Success;
+            _message = $"Deleted {user.UserName}.";
+            NavigationManager.NavigateTo("/admin/users");
+        }
+        else {
+            _messageSeverity = Severity.Error;
+            _message = string.Join(", ", result.Errors.Select(e => e.Description));
+        }
+    }
+
+    private void OnRowClick(DataGridRowClickEventArgs<User> user) {
+        NavigateToUser(user.Item);
+    }
+}

@@ -1,0 +1,119 @@
+@page "/admin/groups"
+@using Microsoft.AspNetCore.Authorization
+@using BlazorApp.Models
+@using BlazorApp.Services
+@attribute [Authorize(Roles = "Admin")]
+@inject GroupService GroupService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+
+    <BlazorApp.Components.Pages.AdminHeader />
+
+    <MudPaper Elevation="6" Class="pa-8">
+        
+        @if (_loading) {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        }
+        else {
+            <MudDataGrid T="Group" Items="@groups" Hover="true" RowClick="OnRowClick" QuickFilter="FilterGroups">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h4" Class="mb-4 mr-16">Groups</MudText>
+                    
+                    <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mb-4 mr-16 ml-8"></MudTextField>
+                    <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+                        <MudButton StartIcon="@Icons.Material.Filled.Add" Class="rounded-pill" OnClick="@CreateGroup">Create new group</MudButton>
+                    </MudButtonGroup>
+                </ToolBarContent>
+                <Columns>
+                    <PropertyColumn Property="x => x.Enabled" Title="">
+                        <CellTemplate>
+                            <MudPaper Elevation="0" Width="4px" Height="40px" Class="ma-0 d.block" Style="@($"background-color: {(context.Item.Enabled ? "green" : "red")};")" />
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Name" />
+                    <PropertyColumn Property="x => x.Description" />
+                    <TemplateColumn Title="Nr variables">
+                        <CellTemplate>
+                            @if (!context.Item.Enabled) {
+                                <i>-------</i>
+                            } else {
+                                @context.Item.Variables?.Where(v => v.Enabled).Count()
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Edit">
+                        <CellTemplate>
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => NavigateToEdit(context.Item))" />
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(async () => await ConfirmDeleteAsync(context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        }
+    </MudPaper>
+
+</MudContainer>
+
+
+@code {
+    private List<Group> groups = new();
+    private int count = 0;
+    private Group? group;
+    private bool _loading = true;
+    private string? _message;
+    private Severity _messageSeverity = Severity.Info;
+    private string _searchString;
+    
+    protected override async Task OnInitializedAsync() {
+        await ReloadGroupsAsync();
+    }
+
+    private Func<Group, bool> FilterGroups => group =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        return group.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase)
+            || group.Description.Contains(_searchString, StringComparison.OrdinalIgnoreCase);
+    };
+
+    private async Task ReloadGroupsAsync() {
+        _loading = true;
+        groups = await GroupService.GetAllGroups();
+        _loading = false;
+    }
+
+    private void NavigateToGroup(int id) {
+        NavigationManager.NavigateTo($"/admin/groups/{id}");
+    }
+
+    private void NavigateToEdit(Group group) {
+        NavigationManager.NavigateTo($"/admin/groups/{group.Id}/editGroups");
+    }
+
+    private async Task ConfirmDeleteAsync(Group group) {
+        if (group is null) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Delete group {group.Name}?");
+        if (!confirmed) return;
+
+        try {
+            await GroupService.Delete(group.Id);
+        
+            await ReloadGroupsAsync();
+        }
+        catch (Exception ex) {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error deleting group: {ex.Message}");
+        }
+    }
+
+    private void CreateGroup() {
+        NavigationManager.NavigateTo("/admin/groups/createGroup");
+    }
+
+    private void OnRowClick(DataGridRowClickEventArgs<Group> group) {
+        NavigateToGroup(group.Item.Id);
+    }
+}

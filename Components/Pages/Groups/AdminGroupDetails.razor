@@ -1,0 +1,79 @@
+@page "/admin/groups/{Id:int}"
+@using Microsoft.AspNetCore.Authorization
+@using BlazorApp.Models
+@using BlazorApp.Services
+@attribute [Authorize(Roles = "Admin")]
+@inject GroupService GroupService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+
+    <BlazorApp.Components.Pages.AdminHeader />
+
+    @if (group == null) {
+        <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+    } else {
+        <MudPaper Elevation="4" Class="pa-8" Style="position: relative">
+            <MudText Typo="Typo.h5" Class="mb-8" Color="Color.Secondary">@group.Name</MudText>
+            <MudText Typo="Typo.body1" Class="mb-4">@group.Description</MudText>
+            <MudText Typo="Typo.body1" Class="mb-4">@group.DateCreated</MudText>
+            <MudText Typo="Typo.body1" Class="mb-4">@group.DateUpdated</MudText>
+            <MudChip T="string" Class="mb-4" Color="@(group.Enabled ? Color.Success : Color.Error)" Size="Size.Medium" Style="position: absolute; top: 32px; right:32px">
+                @(group.Enabled ? "Enabled" : "Disabled")
+            </MudChip>
+            <AuthorizeView Roles="Admin">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick = "@NavigateToEdit" Class="mr-4 mt-4 rounded-pill">
+                    Edit
+                </MudButton>
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Error"
+                           StartIcon="@Icons.Material.Filled.Delete"
+                           OnClick="@ConfirmDeleteAsync"
+                           Class="mt-4 rounded-pill">
+                    Delete
+                </MudButton>
+
+                <div class="d-flex flex-nowrap justify-end gap-1 mt-auto ms-auto mb-3 me-3" style="width: 90%; max-width: 100%; overflow-x: auto; overflow-y: auto; white-space: nowrap; ms-overflow-style: none; scrollbar-width: none;">
+                    @foreach (var variable in group.Variables)
+                    {
+                        <MudChip T="string" Size="Size.Medium" Color="Color.Secondary" Href="@($"/admin/variables")">
+                            @variable.Name
+                        </MudChip>
+                    }
+                </div>
+            </AuthorizeView>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int Id {get; set;}
+
+    private Group? group;
+
+    protected override async Task OnInitializedAsync() {
+        group = await GroupService.GetGroupAsync(Id);
+    }
+
+    private void NavigateToEdit() {
+        NavigationManager.NavigateTo($"/admin/groups/{Id}/editGroups");
+    }
+
+    private async Task ConfirmDeleteAsync() {
+        if (group is null) {
+            return;
+        }
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Delete{group.Name}?");
+
+        if (!confirmed) {
+            return;
+        }
+
+        await GroupService.Delete(group.Id);
+        NavigationManager.NavigateTo("/admin/groups");
+    }
+}

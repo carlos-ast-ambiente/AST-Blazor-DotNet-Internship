@@ -9,9 +9,11 @@ namespace BlazorApp.Models
     {
         public int Id { get; set; }
         public string Name { get; set; }
+        public string Description {get; set;}
         public bool Enabled { get; set; }
         public DateTime DateCreated { get; set; }
         public DateTime DateUpdated { get; set; }
+        public List<User> Users { get; set; }
         public List<Variable> Variables { get; set; }
     }
 }

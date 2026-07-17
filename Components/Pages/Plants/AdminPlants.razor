@@ -1,0 +1,129 @@
+@page "/admin/plants"
+@using Microsoft.AspNetCore.Authorization
+@using BlazorApp.Models
+@using BlazorApp.Services
+@attribute [Authorize]
+@inject NavigationManager NavigationManager
+@inject PlantService PlantService
+@inject IJSRuntime JSRuntime
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+
+    <BlazorApp.Components.Pages.AdminHeader />
+
+    <MudPaper Elevation="6" Class="pa-8">
+        @if (_loading) {
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        }
+        else {
+            <MudDataGrid T="Plant" Items="@plants" Hover="true" RowClick="OnRowClick" QuickFilter="FilterPlants">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h4" Class="mb-4 mr-16">Plants</MudText>
+                    <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mb-4 mr-16 ml-8"></MudTextField>
+                    <MudButtonGroup Color="Color.Primary" Variant="Variant.Filled">
+                        <MudButton StartIcon="@Icons.Material.Filled.Add" Class="rounded-pill" OnClick="@CreatePlant">Create new plant</MudButton>
+                    </MudButtonGroup>
+                </ToolBarContent>
+                <Columns>
+                    <PropertyColumn Property="x => x.Enabled" Title="">
+                        <CellTemplate>
+                            <MudPaper Elevation="0" Width="4px" Height="40px" Class="ma-0 d.block" Style="@($"background-color: {(context.Item.Enabled ? "green" : "red")};")" />
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Name" />
+                    <PropertyColumn Property="x => x.Description" />
+                    <TemplateColumn Title="Users" HeaderClass="large-header">
+                        <CellTemplate>
+                            @if (!context.Item.Enabled) {
+                                <i>------</i>
+                            } else if (context.Item.Users.Any()) {
+                                @string.Join(",", context.Item.Users.Where(u => u.Enabled).Select(u => u.Name))
+                            } else {
+                                <i>No users</i>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Variables" HeaderClass="large-header">
+                        <CellTemplate>
+                            @if (!context.Item.Enabled) {
+                                <i>------</i>
+                            } else if (context.Item.Variables.Any()) {
+                                @string.Join(",", context.Item.Variables.Where(v => v.Enabled).Select(v => v.Name))
+                            } else {
+                                <i>No variables</i>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Edit">
+                        <CellTemplate>
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => NavigateToEdit(context.Item))" />
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(async () => await ConfirmDeleteAsync(context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        }
+    </MudPaper>
+
+</MudContainer>
+
+
+@code {
+    private List<Plant> plants = new();
+
+    private Plant? plant;
+    private bool _loading = true;
+
+    private string _searchString;
+    
+    protected override async Task OnInitializedAsync() {
+        await ReloadPlantsAsync();
+    }
+
+    private Func<Plant, bool> FilterPlants => plant =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        return plant.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase)
+            || plant.Description.Contains(_searchString, StringComparison.OrdinalIgnoreCase);
+    };
+
+    private async Task ReloadPlantsAsync() {
+        _loading = true;
+        plants = await PlantService.GetAllPlants();
+        _loading = false;
+    }
+
+    private void NavigateToPlant(string name) {
+        NavigationManager.NavigateTo($"/admin/plant/{name}");
+    }
+
+    private void NavigateToEdit(Plant plant) {
+        NavigationManager.NavigateTo($"/admin/plant/{plant.Name}/editPlant");
+    }
+
+    private void CreatePlant() {
+        NavigationManager.NavigateTo("/admin/plants/createPlant");
+    }
+
+    private async Task ConfirmDeleteAsync(Plant plant) {
+        if (plant is null) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Delete {plant.Name}?");
+        if (!confirmed) return;
+
+        try {
+            await PlantService.Delete(plant.Id);
+        
+            await ReloadPlantsAsync();
+        }
+        catch (Exception ex) {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error deleting group: {ex.Message}");
+        }
+    }
+
+    private void OnRowClick(DataGridRowClickEventArgs<Plant> plant) {
+        NavigateToPlant(plant.Item.Name);
+    }
+}
