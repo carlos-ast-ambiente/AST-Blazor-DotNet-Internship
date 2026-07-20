@@ -4,8 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using BlazorApp.Models;
 using BlazorApp.Data;
-using Microsoft.EntityFrameworkCore;
-
+using BlazorApp.Repositories;
 
 namespace BlazorApp.Services
 {
@@ -14,20 +13,23 @@ namespace BlazorApp.Services
         /*public override async Task<List<Plant>> GetAllEnabled(bool enabled) {
 
         } */
-        public PlantService(ApplicationDbContext context) : base(context) {
+        protected readonly IPlantRepository _plantRepository;
+
+        public PlantService(IPlantRepository plantRepository) : base(plantRepository) {
+            _plantRepository = plantRepository;
         }
 
         public async Task<Plant?> GetPlantByNameAsync(string name) {
-            return await _context.Plants.Include(p => p.Users).Include(p => p.Variables).FirstOrDefaultAsync(p => p.Name.ToLower() == name.ToLower());
+            return await _plantRepository.GetPlantByNameAsync(name);
         }
 
         public async Task<List<Plant>> GetAllPlants() {
-            return await _context.Set<Plant>().Include(p => p.Users).Include(p => p.Variables).ToListAsync();
+            return await _plantRepository.GetAllPlants();
         }
 
         public async Task<List<Plant>> GetEnabledPlantsAsync()
         {
-            return await _context.Plants.Where(p => p.Enabled).Include(p => p.Users).Include(p => p.Variables).ToListAsync();
+            return await _plantRepository.GetEnabledPlantsAsync();
         }
     }
 }

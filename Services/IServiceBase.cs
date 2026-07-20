@@ -5,10 +5,11 @@ using System.Threading.Tasks;
 using BlazorApp.Data;
 using BlazorApp.Models;
 using Microsoft.EntityFrameworkCore;
+using BlazorApp.Repositories;
 
 namespace BlazorApp.Services
 {
-    public interface IServiceBase<T>
+    public interface IServiceBase<T> where T : class, IEntity
     {
         Task<List<T>> GetAllEnabled(bool enabled);
         Task<T> GetById(bool Enabled, int Id);
@@ -19,39 +20,30 @@ namespace BlazorApp.Services
 
     public class ServiceBase<T> : IServiceBase<T> where T : class, IEntity
     {
-        protected readonly ApplicationDbContext _context;
-        public ServiceBase(ApplicationDbContext context) {
-            this._context = context;
+        protected readonly IRepository<T> _repository;
+        public ServiceBase(IRepository<T> repository) {
+            this._repository = repository;
         }
 
         public async Task<List<T>> GetAllEnabled(bool enabled) {
-            return await _context.Set<T>()
-            .Where(x => x.Enabled == enabled)
-            .ToListAsync();
+            return await _repository.GetAllEnabled(enabled);
         }
 
         public async Task<List<T>> GetAll() {
-            return await _context.Set<T>().ToListAsync();
+            return await _repository.GetAll();
         }
 
         public async Task<T> GetById(bool Enabled, int Id) {
-            var dev = await _context.Set<T>().FirstOrDefaultAsync(y=> y.Enabled == true && y.Id == Id);
-            return dev;
+            return  await _repository.GetById(Enabled, Id);
         }
         public async Task<T> Insert(T type) {
-            _context.Add(type);
-            await _context.SaveChangesAsync();
-            return type; // ??
+            return await _repository.Insert(type);
         }
         public async Task Update(T type) {
-            _context.Entry(type).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+            await _repository.Update(type);
         }
         public async Task Delete(int Id) {
-            var dev = await _context.Set<T>().FindAsync(Id);
-            if (dev == null) return;
-            _context.Set<T>().Remove(dev);
-            await _context.SaveChangesAsync();
+            await _repository.Delete(Id);
         }
     }
 }

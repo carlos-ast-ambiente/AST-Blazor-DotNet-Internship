@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/BlazorApp.Tests.Functional/BlazorApp.Tests.Functional.csproj" />
+    <Project Path="Tests/BlazorApp.Tests.Unit/BlazorApp.Tests.Unit.csproj" />
+  </Folder>
+  <Project Path="BlazorApp.csproj" />
+</Solution>

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using BlazorApp.Models;
 using BlazorApp.Services;
+using BlazorApp.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +45,11 @@ var connectionString = builder.Configuration.GetConnectionString("PostgreSQLLoca
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IVariableRepository, VariableRepository>();
+builder.Services.AddScoped<IPlantRepository, PlantRepository>();
+builder.Services.AddScoped<IGroupRepository, GroupRepository>();
 
 builder.Services.AddScoped<PlantService>();
 builder.Services.AddScoped<UserService>();

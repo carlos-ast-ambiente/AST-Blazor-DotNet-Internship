@@ -5,21 +5,24 @@ using System.Threading.Tasks;
 using BlazorApp.Models;
 using BlazorApp.Data;
 using Microsoft.EntityFrameworkCore;
+using BlazorApp.Repositories;
 
 namespace BlazorApp.Services
 {
     public class GroupService : ServiceBase<Group>
     {
-        public GroupService(ApplicationDbContext context) : base(context) {
+        protected readonly IGroupRepository _groupRepository;
+
+        public GroupService(IGroupRepository groupRepository) : base(groupRepository) {
+            _groupRepository = groupRepository;
         }
 
         public async Task<List<Group>> GetAllGroups() {
-            return await _context.Set<Group>().Include(g => g.Variables.Where(v => v.Enabled))
-            .ToListAsync();
+            return await _groupRepository.GetAllGroups();
         }
 
         public async Task<Group?> GetGroupAsync(int id) {
-            return await _context.Groups.Include(g => g.Variables.Where(v => v.Enabled)).FirstOrDefaultAsync(g => g.Id == id);
+            return await _groupRepository.GetGroupAsync(id);
         }
     }
 }
