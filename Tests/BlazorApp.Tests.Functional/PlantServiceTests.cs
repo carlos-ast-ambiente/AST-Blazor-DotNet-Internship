@@ -23,8 +23,9 @@ namespace BlazorApp.Tests.Functional
             _plantService = new PlantService(_plantRepoMock.Object);
         }
 
-
+        //-------------
         //Create tests
+        //-------------
         [Fact]
         public async Task Insert_ShouldReturnCreatedPlant() {
             //Arrange
@@ -46,8 +47,14 @@ namespace BlazorApp.Tests.Functional
         }
 
 
+        //-------------
         //Read tests
+        //-------------
+
+        //GetPlantByNameAsync-------------------------------------------
+
         [Fact]
+        //reads name => returns plant
         public async Task GetPlantByNameAsync_ShouldReturnPlant(){
             //Arrange
             string name = "TestPlant";
@@ -67,6 +74,25 @@ namespace BlazorApp.Tests.Functional
         }
 
         [Fact]
+        //reads name => returns null
+        public async Task GetPlantByNameAsync_ShouldReturnNull() {
+            //Arrange
+            string name = "Missing";
+
+            _plantRepoMock.Setup(repo => repo.GetPlantByNameAsync(name)).ReturnsAsync((Plant?)null);
+
+            //Act
+            var result = await _plantService.GetPlantByNameAsync(name);
+
+            //Assert
+            result.Should().BeNull();
+            _plantRepoMock.Verify(repo => repo.GetPlantByNameAsync(name), Times.Once);
+        }
+
+        //GetAllPlants---------------------------------------------
+
+        [Fact]
+        //reads list => returns list
         public async Task GetAllPlants_ShouldReturnAllPlants() {
             //Arrange
             var expectedPlants = new List<Plant> {
@@ -88,6 +114,25 @@ namespace BlazorApp.Tests.Functional
         }
 
         [Fact]
+        //reads list with no plants => returns empty list
+        public async Task GetAllPlants_ShouldReturnEmpty(){
+            //Arrange
+            var emptyList = new List<Plant>();
+            _plantRepoMock.Setup(repo => repo.GetAllPlants()).ReturnsAsync(emptyList);
+
+            //Act
+            var result = await _plantService.GetAllPlants();
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeEmpty();
+            _plantRepoMock.Verify(repo => repo.GetAllPlants(), Times.Once);
+        }
+
+        //GetEnabledPlantsAsync-------------------------------------------------
+
+        [Fact]
+        //reads list => returns list of enabled
         public async Task GetEnabledPlantsAsync_ShouldReturnEnabledPlants() { 
             //Arrange
             var allPlants = new List<Plant> {
@@ -111,34 +156,64 @@ namespace BlazorApp.Tests.Functional
             _plantRepoMock.Verify(repo => repo.GetEnabledPlantsAsync(), Times.Once);
         }
 
-
-        //Update tests
-        /* [Fact]
-        public async Task Update_ShouldReturnUpdatedPlant() {
+        [Fact]
+        //reads list with no plants => returns empty list
+        public async Task GetEnabledPlantsAsync_NoPlants_ShouldReturnEmpty() {
             //Arrange
-            var plants = new List<Plant> {
-                new Plant { Id = 9, Name = "OldPlant", Enabled = true}
-            };
-            var updatedPlant = new Plant { Id = 9, Name = "UpdatedPlant", Enabled = false};
-
-            _plantRepoMock.Setup(async repo => repo.Update(It.IsAny<Plant>())).Callback<Plant>(plant => {
-                var dbPlant = plants.Single(u => u.Id == plant.Id);
-                dbPlant.Name = plant.Name;
-            }).ReturnsAsync(updatedPlant);
+            var emptyList = new List<Plant>();
+            _plantRepoMock.Setup(repo => repo.GetEnabledPlantsAsync()).ReturnsAsync(emptyList);
 
             //Act
-            var result = await _plantService.Update(updatedPlant);
+            var result = await _plantService.GetEnabledPlantsAsync();
 
-            //Assert with fluent assertions
+            //Assert
             result.Should().NotBeNull();
-            result.Succeeded.Should().BeTrue();
-            result.Errors.Should().BeEmpty();
-            result.Name.Should().Be("UpdatedPlant");
+            result.Should().BeEmpty();
+            _plantRepoMock.Verify(repo => repo.GetEnabledPlantsAsync(), Times.Once);
+        }
 
-            _plantRepoMock.Verify(repo => repo.Update(It.IsAny<Plant>()), Times.Once);
-        } */
+        [Fact]
+        //reads list with disabled plants => returns empty list
+        public async Task GetEnabledPlantsAsync_ShouldReturnEmpty() {
+            //Arrange
+            var plants = new List<Plant> {
+                new Plant {Id = 1, Name = "Plant1", Enabled = false}, 
+                new Plant {Id = 2, Name = "Plant2", Enabled = false}, 
+                new Plant {Id = 3, Name = "Plant3", Enabled = false} 
+            };
+            var emptyList = new List<Plant>();
 
+            _plantRepoMock.Setup(repo => repo.GetEnabledPlantsAsync()).ReturnsAsync(emptyList);
+
+            //Act
+            var result = await _plantService.GetEnabledPlantsAsync();
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeEmpty();
+            _plantRepoMock.Verify(repo => repo.GetEnabledPlantsAsync(), Times.Once);
+        }
+
+
+        //-------------
+        //Update tests
+        //-------------
+        [Fact]
+        public async Task Update_ShouldReturnSuccess() {
+            //Arrange
+            var updatedPlant = new Plant {Id = 1, Name = "upPlant"};
+            _plantRepoMock.Setup(repo => repo.Update(updatedPlant)).Returns(Task.CompletedTask);
+
+            //Act
+            await _plantService.Update(updatedPlant);
+
+            //Assert
+            _plantRepoMock.Verify(repo => repo.Update(updatedPlant), Times.Once);
+        }
+
+        //-------------
         //Delete tests
+        //-------------
         [Fact]
         public async Task Delete_ShouldDeletePlant() {
             //Arrange

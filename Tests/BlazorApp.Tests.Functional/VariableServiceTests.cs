@@ -22,8 +22,10 @@ namespace BlazorApp.Tests.Functional
             _variableRepoMock = new Mock<IVariableRepository>();
             _variableService = new VariableService(_variableRepoMock.Object);
         }
-
+        
+        //-------------
         //Create tests
+        //-------------
         [Fact]
         public async Task Insert_ShouldReturnCreatedVariable() {
             //Arrange
@@ -44,8 +46,13 @@ namespace BlazorApp.Tests.Functional
             variables.First().Name.Should().Be("Testvariable");
         }
 
+        //-------------
         //Read tests
+        //-------------
+
+        //GetVariablesAsync-----------------------------------------------
         [Fact]
+        //reads list => reads list
         public async Task GetVariablesAsync_ShouldReturnAllVariables() {
             //Arrange
             var expectedvariables = new List<Variable> {
@@ -66,6 +73,24 @@ namespace BlazorApp.Tests.Functional
         }
 
         [Fact]
+        //reads list of variables with no variables => returns emty list
+        public async Task GetVariablesAsync_ShouldReturnEmpty() {
+            //Arrange
+            var emptyList = new List<Variable>();
+            _variableRepoMock.Setup(repo => repo.GetVariablesAsync()).ReturnsAsync(emptyList);
+
+            //Act
+            var result = await _variableService.GetVariablesAsync();
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeEquivalentTo(emptyList);
+            _variableRepoMock.Verify(repo => repo.GetVariablesAsync(), Times.Once);
+        }
+
+        //GetSingleVarAsync-------------------------------------------------
+        [Fact]
+        //reads an id => returns a variable
         public async Task GetSingleVarAsync_ShouldReturnVariableById() {
             //Arrange
             int variableId = 1;
@@ -84,9 +109,40 @@ namespace BlazorApp.Tests.Functional
             _variableRepoMock.Verify(repo => repo.GetSingleVarAsync(variableId), Times.Once);
         }
 
-        //Update tests
+        [Fact]
+        //reads a missing id => returns null
+        public async Task GetSingleVarAsync_ShouldReturnNull() {
+            //Arrange
+            var missingId = 7;
+            _variableRepoMock.Setup(repo => repo.GetSingleVarAsync(missingId)).ReturnsAsync((Variable?)null);
 
+            //Act
+            var result = await _variableService.GetSingleVarAsync(missingId);
+
+            //Assert
+            result.Should().BeNull();
+            _variableRepoMock.Verify(repo => repo.GetSingleVarAsync(missingId), Times.Once);
+        }
+
+        //-------------
+        //Update tests
+        //-------------
+        [Fact]
+        public async Task Update_ShouldReturnSuccess() {
+            //Arrange
+            var updatedVariable = new Variable {Id = 1, Name = "upVar"};
+            _variableRepoMock.Setup(repo => repo.Update(updatedVariable)).Returns(Task.CompletedTask);
+
+            //Act
+            await _variableService.Update(updatedVariable);
+
+            //Assert
+            _variableRepoMock.Verify(repo => repo.Update(updatedVariable), Times.Once);
+        }
+
+        //-------------
         //Delete tests
+        //-------------
         [Fact]
         public async Task Delete_ShouldDeleteVariable() {
             //Arrange

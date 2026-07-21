@@ -24,7 +24,9 @@ namespace BlazorApp.Tests.Functional
         }
 
 
+        //-------------
         //Create tests
+        //-------------
         [Fact]
         public async Task Insert_ShouldReturnCreatedGroup() {
             //Arrange
@@ -43,10 +45,18 @@ namespace BlazorApp.Tests.Functional
             result.Should().NotBeNull();
             groups.Should().ContainSingle();
             groups.First().Name.Should().Be("TestGroup");
+            groups.First().Should().BeEquivalentTo(inputGroup);
         }
 
+
+        //-------------
         //Read tests
+        //-------------
+
+        //GetAllGroups---------------------------------------------
+
         [Fact]
+        //reads a list => returns a list
         public async Task GetAllGroups_ShouldReturnAllGroups() {
             //Arrange
             var expectedGroups = new List<Group> {
@@ -67,6 +77,26 @@ namespace BlazorApp.Tests.Functional
         }
 
         [Fact]
+        //reads list with no groups => returns empty list
+        public async Task GetAllGroups_ShouldReturnEmpty() {
+            //Arrange
+            var emptyList = new List<Group>();
+            _groupRepoMock.Setup(repo => repo.GetAllGroups()).ReturnsAsync(emptyList);
+
+            //Act
+            var result = await _groupService.GetAllGroups();
+
+            //Assert
+            result.Should().NotBeNull();
+            result.Should().BeEquivalentTo(emptyList);
+            _groupRepoMock.Verify(repo => repo.GetAllGroups(), Times.Once);
+        }
+
+
+        //GetGroupAsync-----------------------------------------------
+
+        [Fact]
+        //reads an id => returns a group
         public async Task GetGroupAsync_ShouldReturnGroupById() {
             //Arrange
             int groupId = 1;
@@ -85,9 +115,40 @@ namespace BlazorApp.Tests.Functional
             _groupRepoMock.Verify(repo => repo.GetGroupAsync(groupId), Times.Once);
         }
 
-        //Update tests
+        [Fact]
+        //reads a missing id => returns null
+        public async Task GetGroupAsync_ShouldReturnNull() {
+            //Arrange
+            int missingId = 6;
+            _groupRepoMock.Setup(repo => repo.GetGroupAsync(missingId)).ReturnsAsync((Group?)null);
 
+            //Act
+            var result = await _groupService.GetGroupAsync(missingId);
+
+            //Assert
+            result.Should().BeNull();
+            _groupRepoMock.Verify(repo => repo.GetGroupAsync(missingId), Times.Once);
+        } 
+
+        //-------------
+        //Update tests
+        //-------------
+        [Fact]
+        public async Task Update_ShouldReturnSuccess() {
+            //Arrange
+            var updatedGroup = new Group {Id = 1, Name = "upGroup"};
+            _groupRepoMock.Setup(repo => repo.Update(updatedGroup)).Returns(Task.CompletedTask);
+
+            //Act
+            await _groupService.Update(updatedGroup);
+
+            //Assert
+            _groupRepoMock.Verify(repo => repo.Update(updatedGroup), Times.Once);
+        }
+
+        //-------------
         //Delete tests
+        //-------------
         [Fact]
         public async Task Delete_ShouldDeleteGroup() {
             //Arrange
